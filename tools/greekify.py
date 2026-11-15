@@ -89,7 +89,7 @@ def download(url, dst):
 def ensure_toolchain():
     os.makedirs(CACHE, exist_ok=True)
     import importlib.util
-    if not all(importlib.util.find_spec(m) for m in ("fontTools", "bleak", "Crypto", "PIL")):
+    if not all(importlib.util.find_spec(m) for m in ("fontTools", "bleak", "Crypto")):
         say("installing Python dependencies")
         subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r",
                         os.path.join(ROOT, "requirements.txt")], check=True)
