@@ -40,7 +40,13 @@ python3 -m venv venv
 
 `greekify.py` looks up the latest Watch 3 Pro release in the [Nothing Archive](https://github.com/spike0en/nothing_archive) update list (model `D399`) and downloads it from Nothing's CDN. It fetches Inter and `lv_font_conv` into `cache/`, builds the patched image and stops if the font version check fails. If everything looks right it asks before flashing. After the upload it reconnects to make sure the watch didn't end up in upgrade mode.
 
-Before running it, forget the watch in the phone's Bluetooth settings and close Nothing X. Put the watch on its charger. The upload takes about 30 minutes, then the watch installs the update and reboots by itself. Pair it with Nothing X again when it's done.
+The computer connects to the watch directly over Bluetooth. The phone isn't connected to the computer at all, it only has to let go of the watch, because the watch accepts one connection at a time:
+
+1. On the phone, forget the watch in the Bluetooth settings (and unpair it in Nothing X if it's listed there), then close Nothing X. Turning off Bluetooth on the phone also works.
+2. Put the watch on its charger next to the computer.
+3. Run `greekify.py`. On the first run it pairs the computer with the watch. Accept the prompt on the watch or the computer if one appears.
+4. The upload takes about 30 minutes, then the watch installs the update and reboots by itself.
+5. Pair the watch with Nothing X on the phone again.
 
 `greekify.py build` stops before the Bluetooth part. `--file` and `--url` let you supply the official image yourself.
 
