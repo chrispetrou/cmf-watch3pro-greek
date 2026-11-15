@@ -1,0 +1,15 @@
+# Nothing's firmware images (not redistributed)
+firmware/*.bin
+# per-machine BLE pairing key for the watch
+tools/authkey.hex
+# local environment / downloads / outputs
+venv/
+lvconv/
+fonts/
+build/
+*.log
+__pycache__/
+.DS_Store
+cache/
+tools/watch_address.txt
+*.UNSAFE
