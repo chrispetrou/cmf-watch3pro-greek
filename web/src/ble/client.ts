@@ -34,7 +34,11 @@ export function forgetKey() {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+export type Phase = "connecting" | "pairing";
+
 export class WatchClient {
+  /** Called when the watch or the computer may show a prompt the user has to accept. */
+  onPhase?: (p: Phase) => void;
   private chars = new Map<string, BluetoothRemoteGATTCharacteristic>();
   private reasm = new Map<string, Reassembler>();
   private multi = new Map<string, Bytes[]>();
@@ -74,6 +78,7 @@ export class WatchClient {
     const gatt = this.device.gatt;
     if (!gatt) throw new Error("this device has no GATT server");
     this.log("connecting");
+    this.onPhase?.("connecting");
     const server = await gatt.connect();
     this.chars.clear();
     for (const svc of await server.getPrimaryServices()) {
@@ -232,6 +237,7 @@ export class WatchClient {
       this.key = secret;
       await this.sendCmd(CMD.AUTH_PHONE_NAME, concat(new Uint8Array([A5]), ascii("WebFlasher")));
       this.log("if a pairing prompt appears on the computer or the watch, accept it");
+      this.onPhase?.("pairing");
       await this.expect([CMD.AUTH_WATCH_MAC], 75000);
       await this.sendCmd(CMD.AUTH_NONCE_REQUEST);
       const nonce = await this.expect([CMD.AUTH_NONCE_REPLY]);

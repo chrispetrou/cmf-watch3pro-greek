@@ -82,11 +82,14 @@ const CRC_TABLE = (() => {
   return t;
 })();
 
-export function crc32(data: Bytes): number {
-  let c = 0xffffffff;
-  for (const b of data) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8);
+/** zlib.crc32(data, prev): continue a CRC over more data. */
+export function crc32Update(prev: number, data: Uint8Array): number {
+  let c = (prev ^ 0xffffffff) >>> 0;
+  for (let i = 0; i < data.length; i++) c = CRC_TABLE[(c ^ data[i]) & 0xff] ^ (c >>> 8);
   return (c ^ 0xffffffff) >>> 0;
 }
+
+export const crc32 = (data: Uint8Array) => crc32Update(0, data);
 
 export const crc32le = (data: Bytes) => {
   const out = new Uint8Array(4);

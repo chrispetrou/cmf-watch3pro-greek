@@ -1,8 +1,18 @@
 # Web app (work in progress)
 
-A browser version of the tools, so people can patch their watch without a terminal. This is
-stage 1: a test page that connects to the watch over Web Bluetooth, pairs and reads the firmware
-version. It doesn't write anything to the watch.
+A browser version of the tools, so people can add a language to their watch without a terminal.
+It follows the wizard in the design handoff: choose languages, add the official firmware file,
+connect the watch, install.
+
+What's real so far:
+
+- checking the firmware file (same checks as `tools/patch.py`: AOTA header, CRCs, board, version);
+- the download link, from the Nothing Archive list (Nothing's CDN doesn't allow the browser to
+  fetch the file itself, so the user downloads it);
+- connecting, pairing and reading the watch's firmware version over Web Bluetooth.
+
+Building the patched image and sending it to the watch are **simulated**: the page shows a
+"Preview" badge and nothing is written to the watch.
 
 Needs Chrome or Edge on a computer or Android phone (no Safari, Firefox or iPhone), and Node 22.
 
@@ -11,18 +21,25 @@ cd web
 nvm use        # Node 22, from .nvmrc
 npm install
 npm run dev    # http://localhost:5173
-npm test       # protocol tests against vectors from tools/cmf_ble.py
+npm test       # protocol tests against tools/cmf_ble.py, firmware checks
 ```
 
-Before connecting, turn off Bluetooth on the phone so the watch is free. If the page pairs from
-scratch, pair the watch with Nothing X again afterwards.
+Open `http://localhost:5173/?demo` to click through every screen without a watch.
+`?demo=mismatch`, `?demo=recovery` and `?demo=unsupported` show those cases.
 
-`src/ble/protocol.ts` is a port of `tools/cmf_ble.py` and `src/ble/client.ts` of the connect and
-pairing parts of `tools/cmf_client.py`. If the Python framing changes, regenerate the vectors with
-`npm run vectors` and run the tests.
+## Layout
+
+- `src/ble/protocol.ts`: port of `tools/cmf_ble.py` (framing, AES, CRC). `npm run vectors`
+  regenerates the test vectors from the Python code.
+- `src/ble/client.ts`: connect and pairing, from `tools/cmf_client.py`.
+- `src/lib/watch.ts`: the `WatchLink` interface the screens use, with the Bluetooth and demo versions.
+- `src/lib/firmware.ts`: firmware file checks and the latest-release lookup.
+- `src/lib/languages.ts`: languages and preview messages, in step with `tools/languages.py`.
+- `src/App.tsx`, `src/ui/`: the wizard. `src/styles.css` is the design's stylesheet unchanged,
+  with a few additions at the end.
 
 ## Plan
 
-1. Connect, pair, read the version (this page).
-2. Build the patched image and show a preview in the browser.
+1. Connect, pair, read the version (done).
+2. Build the patched image in the browser and show a preview.
 3. Flash it.
