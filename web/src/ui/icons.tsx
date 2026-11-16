@@ -13,6 +13,7 @@ const Svg = ({ size = 20, width = 1.75, viewBox = "0 0 24 24", children }: P) =>
 export const WatchIcon = (p: P) => (
   <Svg {...p}><circle cx="12" cy="12" r="6" /><path d="M9 6.5L9.5 2h5l.5 4.5M9 17.5l.5 4.5h5l.5-4.5M12 9.5V12l1.5 1.5" /></Svg>
 );
+export const Search = (p: P) => <Svg {...p}><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></Svg>;
 export const Code = (p: P) => <Svg {...p}><path d="M8 7l-5 5 5 5M16 7l5 5-5 5" /></Svg>;
 export const Sun = (p: P) => (
   <Svg {...p}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></Svg>

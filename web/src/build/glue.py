@@ -20,7 +20,13 @@ def run(orig, langs, glyph_docs, lines, log):
     Returns (image, version_ok, preview)."""
     if hasattr(orig, "to_bytes"):
         orig = orig.to_bytes()
-    img, ok = patch(orig, {lang: _glyphs(glyph_docs[lang]) for lang in langs}, log=log)
+    try:
+        img, ok = patch(orig, {lang: _glyphs(glyph_docs[lang]) for lang in langs}, log=log)
+    except SystemExit as e:
+        # patch() stops with SystemExit like the CLI; give the page an error it can explain.
+        if "font image grew" in str(e):
+            raise ValueError("TOO_BIG: " + str(e))
+        raise ValueError(str(e))
     return img, ok, preview(img, lines)
 
 

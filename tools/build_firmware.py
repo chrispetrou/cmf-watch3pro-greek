@@ -115,6 +115,7 @@ def patch(orig, glyph_sets, keep_hangul=False, log=print):
     sd = build_sdfs([("sans36.font", new_sans), ("emoji28.font", emoji)])
     if len(sd) > len(raw):
         raise SystemExit(f"font image grew ({len(sd):#x} > {len(raw):#x}); the font partition may not fit it")
+    log(f"font partition: {len(sd):,} of {len(raw):,} bytes used, {len(raw) - len(sd):,} left")
     lz = lzma_chunks(sd)
     xml2 = set_xml_partition(xml0, "font", file_size=hex(len(lz)), orig_size=hex(len(sd)),
                              checksum="0x%08x" % (zlib.crc32(sd) & 0xffffffff))   # version untouched!

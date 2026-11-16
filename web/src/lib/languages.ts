@@ -19,3 +19,14 @@ export const LANGUAGES: Language[] = [
     sender: "ნინო", msg: "ხვალ 10 საათზე შევხვდეთ?", date: "ორშაბათი, 16 ნოემბერი",
     preview: ["ნინო", "ხვალ 10 საათზე", "შევხვდეთ?"] },
 ];
+
+// ?demo=many: placeholder entries to check that the picker scales. They can't be built.
+const PLACEHOLDERS: [string, string, string][] = [
+  ["hy", "Հայերեն", "Armenian"], ["uk", "Українська", "Ukrainian"], ["bg", "Български", "Bulgarian"],
+  ["sr", "Српски", "Serbian"], ["vi", "Tiếng Việt", "Vietnamese"], ["mn", "Монгол", "Mongolian"],
+  ["kk", "Қазақша", "Kazakh"], ["is", "Íslenska", "Icelandic"], ["ro", "Română", "Romanian"],
+];
+export const demoLanguages = (): Language[] => [
+  ...LANGUAGES,
+  ...PLACEHOLDERS.map(([code, name, en]) => ({ id: en.toLowerCase(), code, name, en, tested: false, sender: "", msg: "", date: "", preview: [] })),
+];

@@ -3,7 +3,7 @@ import { type DragEvent, type ReactNode, useEffect, useMemo, useRef, useState } 
 import { webBluetoothAvailable } from "./ble/client";
 import { type BuildResult, buildImage } from "./build";
 import { type FirmwareCheck, type Release, checkFirmware, latestRelease } from "./lib/firmware";
-import { LANGUAGES } from "./lib/languages";
+import { LANGUAGES, demoLanguages } from "./lib/languages";
 import { BluetoothWatch, DemoWatch, type WatchInfo, type WatchLink } from "./lib/watch";
 import { Bluetooth, Check, Code, Copy, Cross, Download, FileUp, Moon, Retry, Sun, Warn } from "./ui/icons";
 
@@ -13,6 +13,7 @@ type Built = { key: string; result: BuildResult | null };
 const buildKey = (f: File, langs: string[]) => `${f.name}:${f.size}:${f.lastModified}|${langs.join(",")}`;
 import { STEP, type Screen } from "./ui/screens";
 import { FontPreview } from "./ui/FontPreview";
+import { LanguagePicker } from "./ui/LanguagePicker";
 import { WatchPanel } from "./ui/WatchPanel";
 
 const REPO = "https://github.com/chrispetrou/cmf-watch3pro-languages";
@@ -20,6 +21,7 @@ const REPO = "https://github.com/chrispetrou/cmf-watch3pro-languages";
 // ?demo drives every screen without Bluetooth; ?demo=mismatch / recovery / unsupported pick a case.
 const DEMO = new URLSearchParams(location.search).get("demo");
 const DEMO_FW: Record<string, string> = { mismatch: "1.0.1.65", recovery: "0.0.0.1" };
+const LANGS = DEMO === "many" ? demoLanguages() : LANGUAGES;
 
 type Theme = "light" | "dark" | null;
 
@@ -89,7 +91,7 @@ export default function App() {
   }, [theme]);
 
   const dark = theme ? theme === "dark" : systemDark();
-  const chosen = LANGUAGES.filter((l) => sel[l.id]);
+  const chosen = LANGS.filter((l) => sel[l.id]);
   const cur = STEP[screen];
   const busy = screen === "transfer" || screen === "installing";
   const fwOk = fw?.ok ? fw : null;
@@ -132,7 +134,9 @@ export default function App() {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       addLog(`error: ${msg}`);
-      setBuildError(msg);
+      setBuildError(msg.includes("TOO_BIG")
+        ? "These languages don’t fit on the watch together. Choose fewer languages and try again."
+        : msg.trim().split("\n").at(-1) ?? msg); // a Python traceback ends with the actual error
     }
     setScreen("fwValid");
   }
@@ -223,21 +227,7 @@ export default function App() {
   const chooseBody = (
     <>
       <p className="lede">Pick the languages you want to read on your watch. You can choose more than one.</p>
-      <div className="list">
-        {LANGUAGES.map((l) => (
-          <label key={l.id} className="row">
-            <span className="row-main">
-              <span className="row-title native" lang={l.code}>{l.name}</span>
-              <span className="row-sub" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                {l.en}
-                <span className={l.tested ? "status-dot ok" : "status-dot"}><i />{l.tested ? "Tested on a watch" : "Not tested yet"}</span>
-              </span>
-            </span>
-            <input type="checkbox" role="switch" className="switch" checked={!!sel[l.id]}
-              onChange={() => setSel({ ...sel, [l.id]: !sel[l.id] })} aria-label={l.en} />
-          </label>
-        ))}
-      </div>
+      <LanguagePicker languages={LANGS} selected={sel} onToggle={(id) => setSel({ ...sel, [id]: !sel[id] })} />
       <div className="actions">
         <span className="grow">
           Not tested yet means it should work, but nobody has confirmed it on a real watch.{" "}

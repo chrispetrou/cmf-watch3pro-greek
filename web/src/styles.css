@@ -302,3 +302,24 @@ details.more summary:hover { color: var(--fg); }
 .build-t { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font-weight: 500; font-size: 14px; }
 .preview { background: #000; border-radius: 12px; padding: 4px; border: 1px solid var(--line); overflow: hidden; }
 .font-preview { display: block; height: auto; max-width: 100%; }
+
+/* ---------------------------------------------------------------- language picker */
+.lang-row { gap: 12px; }
+.lang-row .native { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.lang-row .en { color: var(--muted); font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list.scroll { max-height: 336px; overflow-y: auto; overscroll-behavior: contain; }
+.search { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; margin-bottom: 10px;
+  border: 1px solid var(--line-strong); border-radius: 10px; background: var(--bg); color: var(--faint); }
+.search:focus-within { border-color: var(--fg); }
+.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 14px; color: var(--fg); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px 0 10px; border-radius: 999px;
+  border: 1px solid var(--line-strong); background: var(--bg-subtle); font-size: 13.5px; font-weight: 500; cursor: pointer; }
+.chip svg { color: var(--muted); }
+.chip:hover svg { color: var(--fg); }
+.empty { margin: 0; padding: 18px 16px; color: var(--muted); font-size: 14px; }
+@media (max-width: 600px) {
+  .lang-row .status-dot { font-size: 0; gap: 0; }
+  .lang-row .status-dot i { width: 7px; height: 7px; }
+}
+.search input::-webkit-search-cancel-button { filter: grayscale(1); opacity: 0.6; cursor: pointer; }
