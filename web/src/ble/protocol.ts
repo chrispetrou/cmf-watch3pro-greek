@@ -47,7 +47,14 @@ export const CMD = {
   AUTH_FAILED: [0xffff, 0xa061],
   FIRMWARE_VERSION_GET: [0xffff, 0x8006],
   FIRMWARE_VERSION_RET: [0xffff, 0x0006],
+  FW_INIT1_REQUEST: [0xffff, 0x9052],
+  FW_INIT1_REPLY: [0xffff, 0xa052],
+  FW_INIT2_REQUEST: [0xffff, 0x9040],
+  FW_INIT2_REPLY: [0xffff, 0xa040],
+  FW_CHUNK_REQUEST: [0xffff, 0xa042],
   FW_CHUNK_WRITE: [0xffff, 0x9042],
+  FW_FINISH_ACK1: [0xffff, 0xa041],
+  FW_FINISH_ACK2: [0xffff, 0x9041],
 } as const satisfies Record<string, Cmd>;
 
 const key = (c1: number, c2: number) => (c1 << 16) | c2;

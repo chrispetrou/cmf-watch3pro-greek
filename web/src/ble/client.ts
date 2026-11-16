@@ -159,11 +159,15 @@ export class WatchClient {
   }
 
   private expect(want: Cmd[], timeoutMs = 15000): Promise<Bytes> {
+    return this.expectMsg(want, timeoutMs).then((m) => m.body);
+  }
+
+  private expectMsg(want: Cmd[], timeoutMs = 15000): Promise<Msg> {
     const check = (m: Msg) => {
       if (sameCmd(m.cmd, CMD.AUTH_FAILED)) {
         throw new Error(`watch returned AUTH_FAILED (${new TextDecoder("latin1").decode(m.body)})`);
       }
-      return m.body;
+      return m;
     };
     const queued = this.inbox.findIndex((m) => want.some((c) => sameCmd(c, m.cmd)) || sameCmd(m.cmd, CMD.AUTH_FAILED));
     if (queued >= 0) return Promise.resolve().then(() => check(this.inbox.splice(queued, 1)[0]));
@@ -249,6 +253,58 @@ export class WatchClient {
     } catch (e) {
       this.log(`  handshake failed: ${e instanceof Error ? e.message : String(e)}`);
       return false;
+    }
+  }
+
+  get connected() { return !!this.device.gatt?.connected; }
+
+  /**
+   * Upload an AOTA image (tools/cmf_client.py flash_firmware). After two init commands the watch
+   * pulls the image itself: it asks for (offset, length) pieces, only of the parts that differ
+   * from what's installed, and reports its own progress. `version` is the watch's current version.
+   */
+  async flash(image: Bytes, version: number[], onProgress: (pct: number, sent: number) => void, signal?: AbortSignal) {
+    if (String.fromCharCode(...image.subarray(0, 4)) !== "AOTA") throw new Error("not an AOTA firmware image");
+    const onAbort = () => this.disconnect();
+    signal?.addEventListener("abort", onAbort, { once: true });
+    try {
+      this.log("FW init 1 (command channel)");
+      await this.sendCmd(CMD.FW_INIT1_REQUEST);
+      let r = await this.expect([CMD.FW_INIT1_REPLY], 20000);
+      if (r[0] !== 0x01) throw new Error(`the watch refused the update (init 1: ${hex(r)})`);
+      this.log(`FW init 2 (firmware channel), version ${version.join(".")}`);
+      await this.write(UUID.fwWrite, CMD.FW_INIT2_REQUEST, new Uint8Array(version));
+      r = await this.expect([CMD.FW_INIT2_REPLY], 20000);
+      if (r[0] !== 0x01) throw new Error(`the watch refused the update (init 2: ${hex(r)})`);
+
+      this.log("uploading, the watch asks for each piece");
+      let sent = 0, last = -1;
+      for (;;) {
+        if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
+        const m = await this.expectMsg([CMD.FW_CHUNK_REQUEST, CMD.FW_FINISH_ACK1], 60000);
+        if (sameCmd(m.cmd, CMD.FW_FINISH_ACK1)) {
+          if (m.body[0] !== 0x01) throw new Error(`the watch reported an error at the end (${hex(m.body)})`);
+          await this.write(UUID.dataWrite, CMD.FW_FINISH_ACK2, new Uint8Array([A5]));
+          this.log(`transfer complete, ${(sent / 1e6).toFixed(1)} MB sent; the watch now verifies, installs and restarts`);
+          onProgress(100, sent);
+          return;
+        }
+        const v = new DataView(m.body.buffer, m.body.byteOffset, m.body.byteLength);
+        const offset = v.getUint32(0), length = v.getUint32(4);
+        const progress = m.body.length > 8 ? m.body[8] : 0;
+        if (offset + length > image.length) throw new Error(`the watch asked for bytes past the end of the image (${offset}+${length})`);
+        await this.write(UUID.fwWrite, CMD.FW_CHUNK_WRITE, image.slice(offset, offset + length));
+        sent += length;
+        if (progress !== last) {
+          last = progress;
+          onProgress(progress, sent);
+        }
+      }
+    } catch (e) {
+      if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
+      throw e;
+    } finally {
+      signal?.removeEventListener("abort", onAbort);
     }
   }
 

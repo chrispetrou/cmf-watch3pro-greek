@@ -15,8 +15,11 @@ What's real so far:
   the same, and shows a preview drawn from the new image's own font. The image can be downloaded
   and flashed with the CLI.
 
-Sending the image to the watch is **simulated**: the page says so in a banner and nothing is
-written to the watch.
+- sending the image to the watch (`WatchClient.flash`, a port of `flash_firmware` in
+  `tools/cmf_client.py`), then reconnecting to check the version once the watch has restarted.
+  Tested against a simulated watch (`test/flash.test.ts`); not yet on a real one.
+
+`?demo` simulates every step instead and says so in a banner.
 
 Needs Chrome or Edge on a computer or Android phone (no Safari, Firefox or iPhone), and Node 22.
 
@@ -25,7 +28,7 @@ cd web
 nvm use        # Node 22, from .nvmrc
 npm install
 npm run dev    # http://localhost:5173
-npm test       # protocol vectors, firmware checks, Pyodide build vs the CLI's sha256
+npm test       # protocol vectors, firmware checks, Pyodide build vs the CLI's sha256, flashing against a fake watch
 ```
 
 Open `http://localhost:5173/?demo` to click through every screen without a watch.
@@ -52,4 +55,4 @@ Open `http://localhost:5173/?demo` to click through every screen without a watch
 
 1. Connect, pair, read the version (done).
 2. Build the patched image in the browser and show a preview (done).
-3. Flash it.
+3. Flash it (written, needs testing on a watch).

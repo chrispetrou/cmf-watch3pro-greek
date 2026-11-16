@@ -42,6 +42,12 @@ const cmpVersion = (a: string, b: string) => {
   return 0;
 };
 
+function eta(startedAt: number, pct: number) {
+  if (pct < 3) return "Estimating time left";
+  const left = ((Date.now() - startedAt) / pct) * (100 - pct) / 60000;
+  return left < 1 ? "Less than a minute left" : `About ${Math.round(left)} min left`;
+}
+
 const listNames = (names: string[]) =>
   names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0] ?? "";
 
@@ -68,6 +74,13 @@ export default function App() {
   const [watch, setWatch] = useState<WatchInfo | null>(null);
   const [connError, setConnError] = useState<string | null>(null);
   const [pct, setPct] = useState(0);
+  const [sent, setSent] = useState(0);
+  const [startedAt, setStartedAt] = useState(0);
+  const [confirmStop, setConfirmStop] = useState(false);
+  const [installStatus, setInstallStatus] = useState("");
+  const [newFw, setNewFw] = useState<string | null>(null);
+  const [problem, setProblem] = useState<{ title: string; body: string } | null>(null);
+  const [stopped, setStopped] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const [built, setBuilt] = useState<Built | null>(null);
@@ -96,7 +109,6 @@ export default function App() {
   const busy = screen === "transfer" || screen === "installing";
   const fwOk = fw?.ok ? fw : null;
   const expected = release?.version ?? "1.0.1.77";
-  const total = fwOk ? fwOk.sizeMb : 45.1;
   const ready = checks.filter(Boolean).length;
   const langIds = chosen.map((l) => l.id);
   const buildFresh = !!fwOk && !!built && built.key === buildKey(fwOk.file, langIds) && !buildError;
@@ -151,6 +163,7 @@ export default function App() {
   // ------------------------------------------------------------ connect
   async function connect() {
     setConnError(null);
+    setStopped(false);
     setLog([]);
     setScreen("searching");
     try {
@@ -185,23 +198,51 @@ export default function App() {
     abort.current = ac;
     setRestoring(langs.length === 0);
     setPct(0);
+    setSent(0);
+    setStartedAt(Date.now());
+    setConfirmStop(false);
+    setProblem(null);
+    setStopped(false);
     setScreen("transfer");
+    // Keep the screen on and warn before the tab is closed while the watch depends on it.
+    let lock: WakeLockSentinel | null = null;
+    try { lock = await navigator.wakeLock?.request("screen"); } catch { /* not allowed, the checklist covers it */ }
+    const guard = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", guard);
+    let stage = "transfer", lastPct = 0;
     try {
-      const image = langs.length === 0 ? fwOk.file : built?.result?.image ?? fwOk.file;
-      await link.install({ image, langs, signal: ac.signal, onProgress: (p) => setPct(p.pct) });
+      const image = langs.length === 0 ? fwOk.file : built?.result?.image;
+      if (!image) throw new Error("the patched image isn’t built yet");
+      await link.install({ image, langs, signal: ac.signal, onProgress: (p) => { lastPct = p.pct; setPct(p.pct); setSent(p.sent); } });
+      stage = "install";
       setScreen("installing");
-      await link.waitForRestart(ac.signal);
-      setScreen("done");
+      const v = await link.waitForRestart(ac.signal, setInstallStatus);
+      setNewFw(v);
+      if (v.startsWith("0.")) {
+        setScreen("recovery");
+      } else {
+        setScreen("done");
+      }
     } catch (e) {
       if (ac.signal.aborted) return;
-      addLog(`error: ${e instanceof Error ? e.message : String(e)}`);
+      const msg = e instanceof Error ? e.message : String(e);
+      addLog(`error: ${msg}`);
+      setProblem(stage === "transfer"
+        ? { title: `The transfer stopped at ${lastPct}%`, body: "The watch keeps its current firmware until a transfer finishes. Move this device closer, check the watch is still on its charger, then try again." }
+        : { title: "Couldn’t reach the watch after the install", body: "Look at the watch screen. If it shows the time, it has restarted, connect again to check it. If it shows a QR code and asks to update, use the official firmware to restore it." });
       setScreen("lost");
+    } finally {
+      window.removeEventListener("beforeunload", guard);
+      lock?.release().catch(() => {});
     }
   }
 
-  function cancelInstall() {
+  function stopInstall() {
     abort.current?.abort();
-    setScreen("connected");
+    setConfirmStop(false);
+    setStopped(true);
+    setWatch(null);
+    setScreen("prep");
   }
 
   function startOver() {
@@ -366,6 +407,13 @@ export default function App() {
               </label>
             ))}
           </div>
+          {stopped && !connError && (
+            <div style={{ marginTop: 12 }}>
+              <Note icon={<Warn size={16} />} title="Transfer stopped">
+                The watch keeps its current firmware. Connect again to start the install over.
+              </Note>
+            </div>
+          )}
           {connError && (
             <div style={{ marginTop: 12 }}>
               <Note tone="err" icon={<Warn size={16} />} title="Couldn’t connect to the watch">
@@ -427,28 +475,45 @@ export default function App() {
           <div className="progress-head">
             <span className="pct">{pct}%</span>
             <span className="progress-meta">
-              <span>{((total * pct) / 100).toFixed(1)} of {total.toFixed(1)} MB</span>
-              <span>About {Math.max(1, Math.round(30 * (1 - pct / 100)))} min left</span>
+              <span>{(sent / 1e6).toFixed(1)} MB sent</span>
+              <span>{eta(startedAt, pct)}</span>
             </span>
           </div>
           <div className="bar big" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${pct}%` }} /></div>
           <Note icon={<Warn size={16} />} title="Keep this tab open">The watch pulls the update from this page. Closing it stops the transfer.</Note>
-          <div className="actions">
-            <span className="grow">{restoring ? "Restoring the official firmware" : `Adding ${listNames(chosen.map((l) => l.en))}`}</span>
-            <button className="btn btn-secondary" type="button" onClick={cancelInstall}>Cancel</button>
-          </div>
-          {link.simulated && more([["Mode", "Simulated, nothing is sent to the watch"]])}
+          {confirmStop ? (
+            <div style={{ marginTop: 12 }}>
+              <Note tone="warn" icon={<Warn size={16} />} title="Stop the transfer?">
+                The watch keeps its current firmware, but it may ask to update again until a transfer finishes.
+              </Note>
+              <div className="actions">
+                <span className="grow" />
+                <button className="btn btn-ghost" type="button" onClick={() => setConfirmStop(false)}>Keep going</button>
+                <button className="btn btn-secondary" type="button" onClick={stopInstall}>Stop transfer</button>
+              </div>
+            </div>
+          ) : (
+            <div className="actions">
+              <span className="grow">{restoring ? "Restoring the official firmware" : `Adding ${listNames(chosen.map((l) => l.en))}`}</span>
+              <button className="btn btn-secondary" type="button" onClick={() => setConfirmStop(true)}>Stop</button>
+            </div>
+          )}
+          {more(link.simulated ? [["Mode", "Demo, nothing is sent to the watch"]] : [])}
         </>
       )}
       {screen === "installing" && (
         <>
-          <p className="lede" style={{ marginBottom: 10 }}>The transfer is done. The watch is installing the update and will restart by itself. Leave it on the charger.</p>
+          <p className="lede" style={{ marginBottom: 10 }}>The transfer is done. The watch is installing the update and will restart by itself. Leave it on the charger, this takes a few minutes.</p>
           <div className="bar big indet"><i /></div>
+          <p className="muted" style={{ fontSize: 13, margin: 0 }}>{installStatus === "installing" ? "Waiting for the watch to restart" : installStatus ? installStatus[0].toUpperCase() + installStatus.slice(1) : ""}</p>
+          {more([])}
         </>
       )}
       {screen === "done" && (
         <>
-          <Note tone="ok" icon={<Check size={16} />} title={restoring ? "The official firmware is back on your watch" : `${listNames(chosen.map((l) => l.en))} ${chosen.length > 1 ? "are" : "is"} on your watch`} />
+          <Note tone="ok" icon={<Check size={16} />} title={restoring ? "The official firmware is back on your watch" : `${listNames(chosen.map((l) => l.en))} ${chosen.length > 1 ? "are" : "is"} on your watch`}>
+            {newFw && <>The watch restarted and runs firmware {newFw}.</>}
+          </Note>
           <p style={{ margin: "20px 0 0", fontWeight: 500 }}>One more thing: pair the watch with your phone again</p>
           <ol className="ol">
             <li>Turn Bluetooth back on and open Nothing X.</li>
@@ -464,13 +529,13 @@ export default function App() {
       )}
       {screen === "lost" && (
         <>
-          <Note tone="err" icon={<Warn size={16} />} title={`The connection dropped at ${pct}%`}>
-            The watch is fine. Move this device closer, check the watch is still on its charger, then try again.
+          <Note tone="err" icon={<Warn size={16} />} title={problem?.title ?? "Something went wrong"}>
+            {problem?.body}
             {more([])}
           </Note>
           <div className="actions">
             <span className="grow" />
-            <button className="btn btn-ghost" type="button" onClick={() => setScreen("connected")}>Cancel install</button>
+            <button className="btn btn-ghost" type="button" onClick={() => { setWatch(null); setScreen("prep"); }}>Connect again</button>
             <button className="btn btn-primary" type="button" onClick={() => install(restoring ? [] : chosen.map((l) => l.id))}><Retry size={16} />Try again</button>
           </div>
         </>
@@ -510,7 +575,7 @@ export default function App() {
         <ol className="ol" style={{ color: "var(--fg)" }}>
           <li>Keep the watch on its charger.</li>
           <li>Use the official update file{fwOk && <> (<span className="mono">{fwOk.version}</span> is ready)</>}.</li>
-          <li>Restore. It takes about 30 minutes, keep this tab open.</li>
+          <li>Restore. In this mode the watch takes the update slowly, it can take a few hours. Keep this tab open and the device awake.</li>
         </ol>
         {more([["Watch", watch?.name ?? ""], ["Reported version", watch?.firmware ?? ""]])}
         <div className="actions">
@@ -536,7 +601,7 @@ export default function App() {
         </div>
       </header>
       {link.simulated && (
-        <div className="banner"><b>Preview.</b> Connecting and building are real, sending to the watch is only simulated.</div>
+        <div className="banner"><b>Demo.</b> No watch is connected and nothing is sent, the screens are simulated.</div>
       )}
 
       <div className="frame">
