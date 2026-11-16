@@ -1,12 +1,12 @@
-# Re-applying Greek after an official update
+# Re-applying the patch after an official update
 
-An official update replaces the font partition, so Greek disappears again. The watch keeps working normally.
+An official update replaces the font partition, so the added letters disappear again. The watch keeps working normally.
 
-## With greekify.py
+## With patch.py
 
 ```bash
-./venv/bin/python tools/greekify.py check    # watch version vs. latest release
-./venv/bin/python tools/greekify.py          # download, patch, flash, verify
+./venv/bin/python tools/patch.py check                # watch version vs. latest release
+./venv/bin/python tools/patch.py --lang greek         # download, patch, flash, verify
 ```
 
 By default the script only flashes when the watch already runs the same version as the image. So install the official update through Nothing X first, then forget the watch on the phone and run the script.
@@ -30,18 +30,18 @@ Keep the file as `firmware/ORIGINAL_<version>.bin`. It's also your recovery imag
 ### 2. Build
 
 ```bash
-./venv/bin/python tools/build_greek_firmware.py \
+./venv/bin/python tools/build_firmware.py \
   --firmware firmware/ORIGINAL_<version>.bin \
-  --ttf fonts/Inter-Medium.ttf \
+  --lang greek \
   --lv-font-conv lvconv/node_modules/.bin/lv_font_conv \
-  --out firmware/greek_<version>.bin
+  --out firmware/patched_<version>.bin
 ```
 
 The first line of output should say the font version matches the app's expected-version table. If it prints a warning instead, don't flash.
 
-If the build stops because the font image grew, the new stock font is bigger and dropping Hangul alone no longer frees enough room. More glyphs would have to go (extend the `drop` predicate in `build_greek_firmware.py`).
+If the build stops because the font image grew, the new stock font is bigger and dropping Hangul alone no longer frees enough room. More glyphs would have to go (extend the `drop` predicate in `build_firmware.py`).
 
-If Nothing ever switches typefaces, the Greek (still Inter Medium) will look slightly different from the rest of the text, but it will still work.
+If Nothing ever switches typefaces, the added letters (still from Inter or the fonts in `tools/languages.py`) will look slightly different from the rest of the text, but they will still work.
 
 ### 3. Flash
 
@@ -49,10 +49,10 @@ Forget the watch on the phone, close Nothing X and put the watch on its charger.
 
 ```bash
 ./venv/bin/python tools/cmf_test.py  <ADDRESS>
-./venv/bin/python tools/cmf_flash.py <ADDRESS> firmware/greek_<version>.bin
+./venv/bin/python tools/cmf_flash.py <ADDRESS> firmware/patched_<version>.bin
 ```
 
-The upload takes about 30 minutes, then the watch installs the image and reboots. Run `cmf_test.py` again afterwards. It should report the new version, not `0.x.x.x`. Then pair the watch with Nothing X again and send yourself a Greek message to check.
+The upload takes about 30 minutes, then the watch installs the image and reboots. Run `cmf_test.py` again afterwards. It should report the new version, not `0.x.x.x`. Then pair the watch with Nothing X again and send yourself a message in the added language to check.
 
 ## If it goes wrong
 

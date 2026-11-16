@@ -69,6 +69,8 @@ The format is the standard output of `lv_font_conv --format bin`: a chain of `[u
 
 Advance widths are stored in 1/16 px: `round(hmtx_advance * 36 * 16 / unitsPerEm)`.
 
+New glyphs can come from any TrueType font. Each one is rasterised from its own font with the same `lv_font_conv` settings, its advance width is computed from that font's `hmtx`, and all added glyphs are appended in codepoint order. The bitmap font only stores pixels, so glyphs from different fonts sit side by side without problems. They only look different if the fonts' shapes and proportions differ.
+
 ## Checksums: how they were worked out
 
 There was no documentation, so every rule above was found by guessing and checking against the official file:
