@@ -115,11 +115,7 @@ An official update replaces the font partition, so the added letters are gone ag
 
 ## Adding a language
 
-1. Add an entry to `LANGUAGES` in `tools/languages.py`: the Unicode ranges, the font and a few sample lines. Use Inter if it covers the script. Otherwise add a font to `FONTS` with a pinned download URL and its sha256, and pick one with similar proportions (x-height and cap height close to Inter's) in a Medium weight. Check that its license allows this (SIL OFL fonts like Noto are fine).
-2. Build an image and render a preview: `render_preview.py <image> docs/previews/<lang>.png --lang <lang>`. Check for "not in font" warnings.
-3. Right-to-left scripts and scripts that need shaping (Arabic, Hebrew, Indic) won't display correctly, because the watch draws one glyph per character from left to right.
-4. Ideally have someone who reads the language check the preview, and test it on a watch.
-5. Open one pull request per language with the registry entry, the preview and a row in the table above.
+Alphabets written left to right can be added with a font entry and a few lines in `tools/languages.py`. Right-to-left scripts and scripts that need shaping (Arabic, Hebrew, Indic) won't display correctly. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to pick a font, the checks to run and what goes in the pull request. If you can't code, open a [language request](https://github.com/chrispetrou/cmf-watch3pro-languages/issues/new?template=language-request.yml).
 
 ## Layout
 
@@ -155,4 +151,4 @@ AGPL-3.0, see [LICENSE](LICENSE).
 
 - The BLE protocol code (`cmf_ble.py`, `cmf_client.py`) is ported from [Gadgetbridge](https://codeberg.org/Freeyourgadget/Gadgetbridge)'s `cmfwatchpro` support, which is AGPL-3.0. That's why the whole repo uses the same license.
 - Glyphs are rendered from [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL Open Font License 1.1) and, for scripts Inter doesn't cover, the fonts listed in the Languages table (Noto fonts are also under the SIL Open Font License 1.1). No fonts are included, the scripts download them.
-- Please don't open issues or PRs with firmware images or patched `.bin` files.
+- Please don't open issues or PRs with firmware images or patched `.bin` files. Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).
