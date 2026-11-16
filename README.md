@@ -59,6 +59,8 @@ The computer connects to the watch directly over Bluetooth. The phone isn't conn
 4. The upload takes about 30 minutes, then the watch installs the update and reboots by itself.
 5. Pair the watch with Nothing X on the phone again.
 
+Bluetooth headphones connected to the computer (AirPods, for example) may stutter or drop while it pairs with the watch and during the upload, because both share the computer's Bluetooth radio. If they drop, reconnect them. Using the speakers or pausing the music avoids it.
+
 `patch.py build --lang ...` stops before the Bluetooth part. `--file` and `--url` let you supply the official image yourself.
 
 ## How it works
