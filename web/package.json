@@ -4,13 +4,17 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/copy-pyodide.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/copy-pyodide.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "vectors": "../venv/bin/python test/make_vectors.py > test/vectors.json"
+    "vectors": "../venv/bin/python test/make_vectors.py > test/vectors.json",
+    "glyphs": "../venv/bin/python ../tools/export_glyphs.py"
   },
   "dependencies": {
+    "pyodide": "^314.0.7",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

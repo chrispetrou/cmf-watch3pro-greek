@@ -1,7 +1,6 @@
 // What the UI needs from the watch, behind one interface so the screens can be driven by the
 // real Bluetooth code or by a demo (open the page with ?demo).
-// Connecting and reading the version is real. Building the patched image and sending it are
-// simulated until stages 2 and 3 land.
+// Connecting and reading the version is real. Sending the image is simulated until stage 3.
 import { type Phase, WatchClient } from "../ble/client";
 
 export type WatchInfo = { name: string; firmware: string };
@@ -12,8 +11,8 @@ export interface WatchLink {
   readonly simulated: boolean;
   /** Must be called straight from a click: the browser opens its device picker. */
   connect(opts: { showAll: boolean; onPhase: (p: Phase) => void; log: (m: string) => void }): Promise<WatchInfo>;
-  /** Build the image with these languages (none = official, unchanged) and send it. */
-  install(opts: { firmware: File; langs: string[]; onProgress: (p: Progress) => void; signal: AbortSignal }): Promise<void>;
+  /** Send this image to the watch. `langs` is empty when restoring the official firmware. */
+  install(opts: { image: Blob; langs: string[]; onProgress: (p: Progress) => void; signal: AbortSignal }): Promise<void>;
   /** Resolves once the watch has installed the update and restarted. */
   waitForRestart(signal: AbortSignal): Promise<void>;
   disconnect(): void;
@@ -25,7 +24,7 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     signal?.addEventListener("abort", () => { clearTimeout(t); reject(new DOMException("Cancelled", "AbortError")); });
   });
 
-async function simulateTransfer(firmware: File, onProgress: (p: Progress) => void, signal: AbortSignal, from = 0) {
+async function simulateTransfer(firmware: Blob, onProgress: (p: Progress) => void, signal: AbortSignal, from = 0) {
   for (let pct = from; pct <= 100; pct++) {
     onProgress({ pct, sent: (firmware.size * pct) / 100, total: firmware.size });
     await sleep(90, signal);
@@ -49,8 +48,8 @@ export class BluetoothWatch implements WatchLink {
     }
   }
 
-  install({ firmware, onProgress, signal }: Parameters<WatchLink["install"]>[0]) {
-    return simulateTransfer(firmware, onProgress, signal);
+  install({ image, onProgress, signal }: Parameters<WatchLink["install"]>[0]) {
+    return simulateTransfer(image, onProgress, signal);
   }
 
   waitForRestart(signal: AbortSignal) { return sleep(2600, signal); }
@@ -71,8 +70,8 @@ export class DemoWatch implements WatchLink {
     return { name: "CMF Watch 3 Pro 4F2A", firmware: this.firmware };
   }
 
-  install({ firmware, onProgress, signal }: Parameters<WatchLink["install"]>[0]) {
-    return simulateTransfer(firmware, onProgress, signal);
+  install({ image, onProgress, signal }: Parameters<WatchLink["install"]>[0]) {
+    return simulateTransfer(image, onProgress, signal);
   }
 
   waitForRestart(signal: AbortSignal) { return sleep(2600, signal); }

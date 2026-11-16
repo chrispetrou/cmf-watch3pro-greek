@@ -1,11 +1,18 @@
 // Watch Languages: choose languages, add the official firmware, connect, install.
 import { type DragEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { webBluetoothAvailable } from "./ble/client";
+import { type BuildResult, buildImage } from "./build";
 import { type FirmwareCheck, type Release, checkFirmware, latestRelease } from "./lib/firmware";
 import { LANGUAGES } from "./lib/languages";
 import { BluetoothWatch, DemoWatch, type WatchInfo, type WatchLink } from "./lib/watch";
 import { Bluetooth, Check, Code, Copy, Cross, Download, FileUp, Moon, Retry, Sun, Warn } from "./ui/icons";
+
+type FirmwareOk = Extract<FirmwareCheck, { ok: true }>;
+// The demo file is empty, so there is nothing to build.
+type Built = { key: string; result: BuildResult | null };
+const buildKey = (f: File, langs: string[]) => `${f.name}:${f.size}:${f.lastModified}|${langs.join(",")}`;
 import { STEP, type Screen } from "./ui/screens";
+import { FontPreview } from "./ui/FontPreview";
 import { WatchPanel } from "./ui/WatchPanel";
 
 const REPO = "https://github.com/chrispetrou/cmf-watch3pro-languages";
@@ -61,6 +68,9 @@ export default function App() {
   const [pct, setPct] = useState(0);
   const [restoring, setRestoring] = useState(false);
   const [log, setLog] = useState<string[]>([]);
+  const [built, setBuilt] = useState<Built | null>(null);
+  const [buildError, setBuildError] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const abort = useRef<AbortController | null>(null);
@@ -86,6 +96,8 @@ export default function App() {
   const expected = release?.version ?? "1.0.1.77";
   const total = fwOk ? fwOk.sizeMb : 45.1;
   const ready = checks.filter(Boolean).length;
+  const langIds = chosen.map((l) => l.id);
+  const buildFresh = !!fwOk && !!built && built.key === buildKey(fwOk.file, langIds) && !buildError;
   const addLog = (m: string) =>
     setLog((l) => [...l, `[${new Date().toLocaleTimeString([], { hour12: false })}] ${m}`]);
 
@@ -97,7 +109,32 @@ export default function App() {
     setFw({ ok: false, file, problem: "" });
     const r = await checkFirmware(file, setCheckPct);
     setFw(r);
-    setScreen(r.ok ? "fwValid" : "fwWrong");
+    if (r.ok) await startBuild(r);
+    else setScreen("fwWrong");
+  }
+
+  // ------------------------------------------------------------ build
+  async function startBuild(check: FirmwareOk) {
+    const key = buildKey(check.file, langIds);
+    if (built?.key === key && !buildError) { setScreen("fwValid"); return; }
+    setScreen("fwBuilding");
+    setBuildError(null);
+    setBuilt(null);
+    setLog([]);
+    try {
+      const result = check.file.size === 0 ? null : await buildImage(check.file, langIds, chosen.flatMap((l) => l.preview.map((t) => [l.id, t] as [string, string])), addLog);
+      if (result && !result.versionOk) {
+        throw new Error("The font version check failed, so the watch could reject this image at boot. Stopping here to keep it safe.");
+      }
+      if (result) addLog(`built ${(result.image.size / 1e6).toFixed(1)} MB, sha256 ${result.sha256}`);
+      setBuilt({ key, result });
+      setImageUrl((old) => { if (old) URL.revokeObjectURL(old); return result ? URL.createObjectURL(result.image) : null; });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      addLog(`error: ${msg}`);
+      setBuildError(msg);
+    }
+    setScreen("fwValid");
   }
 
   const pickFile = () => fileInput.current?.click();
@@ -146,7 +183,8 @@ export default function App() {
     setPct(0);
     setScreen("transfer");
     try {
-      await link.install({ firmware: fwOk.file, langs, signal: ac.signal, onProgress: (p) => setPct(p.pct) });
+      const image = langs.length === 0 ? fwOk.file : built?.result?.image ?? fwOk.file;
+      await link.install({ image, langs, signal: ac.signal, onProgress: (p) => setPct(p.pct) });
       setScreen("installing");
       await link.waitForRestart(ac.signal);
       setScreen("done");
@@ -206,7 +244,7 @@ export default function App() {
           <a href={`${REPO}/issues`}>Tell us how it went</a>
         </span>
         <button className="btn btn-primary" type="button" disabled={chosen.length === 0}
-          onClick={() => setScreen(fwOk ? "fwValid" : "fwEmpty")}>Continue</button>
+          onClick={() => (fwOk ? startBuild(fwOk) : setScreen("fwEmpty"))}>Continue</button>
       </div>
     </>
   );
@@ -234,8 +272,9 @@ export default function App() {
           <p className="hint">The .bin file you just downloaded</p>
           {DEMO !== null && (
             <p className="hint"><button className="link" type="button" onClick={() => {
-              setFw({ ok: true, file: new File([], `CMF_JX402_08_ATS3089C_V${expected}_GPS_V6.bin`), version: expected, board: "JX402_08", sizeMb: 45.1 });
-              setScreen("fwValid");
+              const demo: FirmwareOk = { ok: true, file: new File([], `CMF_JX402_08_ATS3089C_V${expected}_GPS_V6.bin`), version: expected, board: "JX402_08", sizeMb: 45.1 };
+              setFw(demo);
+              startBuild(demo);
             }}>Use a demo file</button></p>
           )}
         </div>
@@ -257,8 +296,44 @@ export default function App() {
             <span className="file-name mono" title={fwOk.file.name}>{fwOk.file.name}</span>
             <span className="file-meta"><span>Version <b>{fwOk.version}</b></span><span>{fwOk.sizeMb.toFixed(1)} MB</span><span>Official, unmodified</span></span>
           </span>
-          <button className="btn btn-ghost" type="button" onClick={() => { setFw(null); setScreen("fwEmpty"); }}>Replace</button>
+          <button className="btn btn-ghost" type="button" onClick={() => { setFw(null); setBuilt(null); setScreen("fwEmpty"); }}>Replace</button>
         </div>
+      )}
+      {screen === "fwBuilding" && (
+        <div className="build">
+          <p className="build-t"><span className="spinner" />Adding {listNames(chosen.map((l) => l.en))} to the firmware</p>
+          <div className="bar indet"><i /></div>
+          <p className="muted" style={{ fontSize: 13, margin: "8px 0 0" }}>This runs on your device and takes a few seconds. The first time also loads the build tools (about 10 MB).</p>
+        </div>
+      )}
+      {screen === "fwValid" && buildError && (
+        <div style={{ marginTop: 12 }}>
+          <Note tone="err" icon={<Warn size={16} />} title="Couldn’t add the languages">
+            {buildError}
+            {more([])}
+          </Note>
+          <div className="actions"><span className="grow" /><button className="btn btn-secondary" type="button" onClick={() => fwOk && startBuild(fwOk)}><Retry size={16} />Try again</button></div>
+        </div>
+      )}
+      {screen === "fwValid" && buildFresh && built?.result && (
+        <div className="build">
+          <p className="build-t">How your watch will show it</p>
+          <div className="preview">
+            <FontPreview preview={built.result.preview}
+              lines={built.result.preview.lines} />
+          </div>
+          <p className="muted" style={{ fontSize: 13, margin: "8px 0 0" }}>Drawn from the new firmware’s own font, pixel for pixel. Nothing has been sent to the watch.</p>
+          {more([["Image", `${(built.result.image.size / 1e6).toFixed(1)} MB`], ["SHA-256", built.result.sha256], ["Font version", "Matches what the watch expects"]])}
+          {imageUrl && fwOk && (
+            <p style={{ margin: "8px 0 0", fontSize: 13 }}>
+              <a className="link" href={imageUrl} download={`CMF_Watch3Pro_${fwOk.version}_${[...langIds].sort().join("-")}.bin`}>Download the patched file</a>
+              <span className="muted"> to flash it with the command-line tool instead</span>
+            </p>
+          )}
+        </div>
+      )}
+      {screen === "fwValid" && buildFresh && built && !built.result && (
+        <p className="muted" style={{ fontSize: 13, margin: "12px 0 0" }}>Demo file: no image is built.</p>
       )}
       {screen === "fwWrong" && fw && !fw.ok && (
         <>
@@ -277,7 +352,7 @@ export default function App() {
       )}
       <div className="actions">
         <span className="grow" />
-        <button className="btn btn-primary" type="button" disabled={screen !== "fwValid"} onClick={() => setScreen("prep")}>Continue</button>
+        <button className="btn btn-primary" type="button" disabled={screen !== "fwValid" || !buildFresh} onClick={() => setScreen("prep")}>Continue</button>
       </div>
     </>
   );
@@ -471,7 +546,7 @@ export default function App() {
         </div>
       </header>
       {link.simulated && (
-        <div className="banner"><b>Preview.</b> Connecting is real, installing is only simulated. Nothing is written to the watch yet.</div>
+        <div className="banner"><b>Preview.</b> Connecting and building are real, sending to the watch is only simulated.</div>
       )}
 
       <div className="frame">

@@ -8,11 +8,14 @@ export type Language = {
   sender: string;
   msg: string;
   date: string;
+  preview: string[]; // drawn with the patched font after building, short enough for one line each
 };
 
 export const LANGUAGES: Language[] = [
   { id: "greek", code: "el", name: "Ελληνικά", en: "Greek", tested: true,
-    sender: "Μαρία", msg: "Φτάνω σε 10 λεπτά, κράτα μου θέση!", date: "Δευτέρα 16 Νοε" },
+    sender: "Μαρία", msg: "Φτάνω σε 10 λεπτά, κράτα μου θέση!", date: "Δευτέρα 16 Νοε",
+    preview: ["Μαρία", "Φτάνω σε 10 λεπτά,", "κράτα μου θέση!"] },
   { id: "georgian", code: "ka", name: "ქართული", en: "Georgian", tested: false,
-    sender: "ნინო", msg: "ხვალ 10 საათზე შევხვდეთ?", date: "ორშაბათი, 16 ნოემბერი" },
+    sender: "ნინო", msg: "ხვალ 10 საათზე შევხვდეთ?", date: "ორშაბათი, 16 ნოემბერი",
+    preview: ["ნინო", "ხვალ 10 საათზე", "შევხვდეთ?"] },
 ];

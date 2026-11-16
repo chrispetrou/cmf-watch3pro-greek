@@ -16,3 +16,6 @@ tools/watch_address.txt
 # web app
 web/node_modules/
 web/dist/
+web/public/pyodide/
+web/.vite/
+!web/src/build/

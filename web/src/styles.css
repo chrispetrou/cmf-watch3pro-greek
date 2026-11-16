@@ -296,3 +296,9 @@ details.more summary:hover { color: var(--fg); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
 }
+
+/* ---------------------------------------------------------------- build + preview */
+.build { margin-top: 16px; }
+.build-t { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font-weight: 500; font-size: 14px; }
+.preview { background: #000; border-radius: 12px; padding: 4px; border: 1px solid var(--line); overflow: hidden; }
+.font-preview { display: block; height: auto; max-width: 100%; }

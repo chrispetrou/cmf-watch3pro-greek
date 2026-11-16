@@ -125,6 +125,7 @@ tools/
   build_firmware.py        official image -> patched image (reproducible)
   languages.py             the languages and the fonts their glyphs come from
   render_preview.py        render text with the watch font to a PNG (needs Pillow)
+  export_glyphs.py         export each language's glyphs for the web app (web/public/glyphs/)
   cmf_scan.py              find the watch's BLE address
   cmf_test.py              pair and read the firmware version (read-only)
   cmf_flash.py             upload an image over BLE
