@@ -8,16 +8,13 @@ export type Language = {
   sender: string;
   msg: string;
   date: string;
-  preview: string[]; // drawn with the patched font after building, short enough for one line each
 };
 
 export const LANGUAGES: Language[] = [
   { id: "greek", code: "el", name: "Ελληνικά", en: "Greek", tested: true,
-    sender: "Μαρία", msg: "Φτάνω σε 10 λεπτά, κράτα μου θέση!", date: "Δευτέρα 16 Νοε",
-    preview: ["Μαρία", "Φτάνω σε 10 λεπτά,", "κράτα μου θέση!"] },
+    sender: "Μαρία", msg: "Φτάνω σε 10 λεπτά, κράτα μου θέση!", date: "Δευτέρα 16 Νοε" },
   { id: "georgian", code: "ka", name: "ქართული", en: "Georgian", tested: false,
-    sender: "ნინო", msg: "ხვალ 10 საათზე შევხვდეთ?", date: "ორშაბათი, 16 ნოემბერი",
-    preview: ["ნინო", "ხვალ 10 საათზე", "შევხვდეთ?"] },
+    sender: "ნინო", msg: "ხვალ 10 საათზე შევხვდეთ?", date: "ორშაბათი, 16 ნოემბერი" },
 ];
 
 // ?demo=many: placeholder entries to check that the picker scales. They can't be built.
@@ -28,5 +25,5 @@ const PLACEHOLDERS: [string, string, string][] = [
 ];
 export const demoLanguages = (): Language[] => [
   ...LANGUAGES,
-  ...PLACEHOLDERS.map(([code, name, en]) => ({ id: en.toLowerCase(), code, name, en, tested: false, sender: "", msg: "", date: "", preview: [] })),
+  ...PLACEHOLDERS.map(([code, name, en]) => ({ id: en.toLowerCase(), code, name, en, tested: false, sender: "", msg: "", date: "" })),
 ];

@@ -1,9 +1,9 @@
 // Main-thread side of the image build: fetch the glyphs, hand everything to the worker.
-import type { BuildResponse, Preview } from "./types";
+import type { BuildResponse } from "./types";
 
-export type BuildResult = { image: Blob; sha256: string; versionOk: boolean; preview: Preview };
+export type BuildResult = { image: Blob; sha256: string; versionOk: boolean };
 
-export async function buildImage(firmware: File, langs: string[], lines: [string, string][], onLog: (m: string) => void, signal?: AbortSignal): Promise<BuildResult> {
+export async function buildImage(firmware: File, langs: string[], onLog: (m: string) => void, signal?: AbortSignal): Promise<BuildResult> {
   const glyphs: Record<string, string> = {};
   for (const lang of langs) {
     const r = await fetch(new URL(`glyphs/${lang}.json`, document.baseURI), { signal });
@@ -20,9 +20,9 @@ export async function buildImage(firmware: File, langs: string[], lines: [string
         const m = e.data;
         if (m.type === "log") onLog(m.msg);
         else if (m.type === "error") reject(new Error(m.message));
-        else resolve({ image: new Blob([m.image], { type: "application/octet-stream" }), sha256: m.sha256, versionOk: m.versionOk, preview: m.preview });
+        else resolve({ image: new Blob([m.image], { type: "application/octet-stream" }), sha256: m.sha256, versionOk: m.versionOk });
       };
-      worker.postMessage({ firmware: data, langs, glyphs, lines, indexURL: new URL("pyodide/", document.baseURI).href }, [data]);
+      worker.postMessage({ firmware: data, langs, glyphs, indexURL: new URL("pyodide/", document.baseURI).href }, [data]);
     });
   } finally {
     worker.terminate();

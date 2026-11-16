@@ -12,8 +12,7 @@ What's real so far:
 - connecting, pairing and reading the watch's firmware version over Web Bluetooth;
 - building the patched image, in a Web Worker with [Pyodide](https://pyodide.org). It runs the
   same Python as the command-line tool (`tools/build_firmware.py`), so the result is byte for byte
-  the same, and shows a preview drawn from the new image's own font. The image can be downloaded
-  and flashed with the CLI.
+  the same. The image can also be downloaded and flashed with the CLI.
 
 - sending the image to the watch (`WatchClient.flash`, a port of `flash_firmware` in
   `tools/cmf_client.py`), then reconnecting to check the version once the watch has restarted.
@@ -54,5 +53,5 @@ Open `http://localhost:5173/?demo` to click through every screen without a watch
 ## Plan
 
 1. Connect, pair, read the version (done).
-2. Build the patched image in the browser and show a preview (done).
+2. Build the patched image in the browser (done).
 3. Flash it (written, needs testing on a watch).

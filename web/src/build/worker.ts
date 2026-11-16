@@ -30,18 +30,18 @@ function init(indexURL: string) {
 }
 
 self.onmessage = async (e: MessageEvent<BuildRequest>) => {
-  const { firmware, langs, glyphs, lines, indexURL } = e.data;
+  const { firmware, langs, glyphs, indexURL } = e.data;
   try {
     post({ type: "log", msg: "loading the build tools" });
     const py = await init(indexURL);
     const run = py.pyimport("glue").run;
-    const res = run(new Uint8Array(firmware), py.toPy(langs), py.toPy(glyphs), py.toPy(lines), (m: string) => post({ type: "log", msg: m }));
-    const [img, ok, preview] = res.toJs({ create_proxies: false }) as [Uint8Array, boolean, string];
+    const res = run(new Uint8Array(firmware), py.toPy(langs), py.toPy(glyphs), (m: string) => post({ type: "log", msg: m }));
+    const [img, ok] = res.toJs({ create_proxies: false }) as [Uint8Array, boolean];
     res.destroy?.();
     const image = img.slice().buffer;
     const sha = new Uint8Array(await crypto.subtle.digest("SHA-256", image));
     post({
-      type: "done", image, versionOk: ok, preview: JSON.parse(preview),
+      type: "done", image, versionOk: ok,
       sha256: Array.from(sha, (b) => b.toString(16).padStart(2, "0")).join(""),
     }, [image]);
   } catch (err) {

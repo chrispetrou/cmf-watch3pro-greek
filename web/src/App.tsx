@@ -12,7 +12,6 @@ type FirmwareOk = Extract<FirmwareCheck, { ok: true }>;
 type Built = { key: string; result: BuildResult | null };
 const buildKey = (f: File, langs: string[]) => `${f.name}:${f.size}:${f.lastModified}|${langs.join(",")}`;
 import { STEP, type Screen } from "./ui/screens";
-import { FontPreview } from "./ui/FontPreview";
 import { LanguagePicker } from "./ui/LanguagePicker";
 import { WatchPanel } from "./ui/WatchPanel";
 
@@ -54,7 +53,7 @@ const listNames = (names: string[]) =>
 function Note({ tone = "", icon, title, children }: { tone?: string; icon: ReactNode; title: ReactNode; children?: ReactNode }) {
   return (
     <div className={`note ${tone}`} role={tone === "err" || tone === "warn" ? "alert" : undefined}>
-      {icon}
+      <span className="note-icon">{icon}</span>
       <div style={{ minWidth: 0, flex: 1 }}><p className="t">{title}</p>{children && <div className="s">{children}</div>}</div>
     </div>
   );
@@ -136,7 +135,7 @@ export default function App() {
     setBuilt(null);
     setLog([]);
     try {
-      const result = check.file.size === 0 ? null : await buildImage(check.file, langIds, chosen.flatMap((l) => l.preview.map((t) => [l.id, t] as [string, string])), addLog);
+      const result = check.file.size === 0 ? null : await buildImage(check.file, langIds, addLog);
       if (result && !result.versionOk) {
         throw new Error("The font version check failed, so the watch could reject this image at boot. Stopping here to keep it safe.");
       }
@@ -331,10 +330,13 @@ export default function App() {
         </div>
       )}
       {screen === "fwBuilding" && (
-        <div className="build">
-          <p className="build-t"><span className="spinner" />Adding {listNames(chosen.map((l) => l.en))} to the firmware</p>
-          <div className="bar indet"><i /></div>
-          <p className="muted" style={{ fontSize: 13, margin: "8px 0 0" }}>This runs on your device and takes a few seconds. The first time also loads the build tools (about 10 MB).</p>
+        <div className="file" style={{ marginTop: 12 }}>
+          <span className="file-icon"><span className="spinner" /></span>
+          <span className="file-main">
+            <span className="file-name">Adding {listNames(chosen.map((l) => l.en))}</span>
+            <span className="bar indet"><i /></span>
+            <span className="file-meta">Runs on this device and takes a few seconds. The first time also loads the build tools (about 10 MB).</span>
+          </span>
         </div>
       )}
       {screen === "fwValid" && buildError && (
@@ -347,21 +349,20 @@ export default function App() {
         </div>
       )}
       {screen === "fwValid" && buildFresh && built?.result && (
-        <div className="build">
-          <p className="build-t">How your watch will show it</p>
-          <div className="preview">
-            <FontPreview preview={built.result.preview}
-              lines={built.result.preview.lines} />
+        <>
+          <div className="file ok" style={{ marginTop: 12 }}>
+            <span className="file-icon"><Check size={16} /></span>
+            <span className="file-main">
+              <span className="file-name">{listNames(chosen.map((l) => l.en))} added</span>
+              <span className="file-meta"><span>{(built.result.image.size / 1e6).toFixed(1)} MB</span><span>Font check passed</span><span>Not sent to the watch yet</span></span>
+            </span>
+            {imageUrl && fwOk && (
+              <a className="btn btn-ghost" href={imageUrl} download={`CMF_Watch3Pro_${fwOk.version}_${[...langIds].sort().join("-")}.bin`}
+                title="Download the patched file, to flash it with the command-line tool">Download</a>
+            )}
           </div>
-          <p className="muted" style={{ fontSize: 13, margin: "8px 0 0" }}>Drawn from the new firmware’s own font, pixel for pixel. Nothing has been sent to the watch.</p>
           {more([["Image", `${(built.result.image.size / 1e6).toFixed(1)} MB`], ["SHA-256", built.result.sha256], ["Font version", "Matches what the watch expects"]])}
-          {imageUrl && fwOk && (
-            <p style={{ margin: "8px 0 0", fontSize: 13 }}>
-              <a className="link" href={imageUrl} download={`CMF_Watch3Pro_${fwOk.version}_${[...langIds].sort().join("-")}.bin`}>Download the patched file</a>
-              <span className="muted"> to flash it with the command-line tool instead</span>
-            </p>
-          )}
-        </div>
+        </>
       )}
       {screen === "fwValid" && buildFresh && built && !built.result && (
         <p className="muted" style={{ fontSize: 13, margin: "12px 0 0" }}>Demo file: no image is built.</p>
@@ -390,7 +391,7 @@ export default function App() {
 
   const PREP = [
     ["Turn off Bluetooth on your phone", "Otherwise the phone keeps the watch to itself. You turn it back on at the end."],
-    ["Put the watch on its charger", "Leave it there until the end. Installing takes about 30 minutes."],
+    ["Put the watch on its charger", "Leave it there until the end. Installing can take up to 30 minutes."],
     ["Keep this device awake and close", "Plug it in, stop the screen from locking, and stay within a few steps of the watch."],
   ] as const;
 
@@ -450,7 +451,7 @@ export default function App() {
             <dl className="kv"><dt>Watch</dt><dd>{watch.name}</dd><dt>Watch firmware</dt><dd>{watch.firmware}</dd><dt>Update file</dt><dd>{fwOk.version}</dd></dl>
           </Note>
           <div className="actions">
-            <span className="grow">Installing takes about 30 minutes.</span>
+            <span className="grow">Installing can take up to 30 minutes.</span>
             <button className="btn btn-primary" type="button" onClick={() => install(chosen.map((l) => l.id))}>Start install</button>
           </div>
         </>

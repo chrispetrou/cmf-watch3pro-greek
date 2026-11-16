@@ -171,7 +171,6 @@ a { color: inherit; }
 .file { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; }
 .file-icon { width: 32px; height: 32px; flex: none; border-radius: 8px; display: grid; place-items: center; background: var(--bg-subtle); border: 1px solid var(--line); color: var(--muted); }
 .file.ok .file-icon { color: var(--ok); background: var(--ok-bg); border-color: transparent; }
-.file.bad { border-color: color-mix(in srgb, var(--err) 35%, var(--line)); }
 .file.bad .file-icon { color: var(--err); background: var(--err-bg); border-color: transparent; }
 .file-main { flex: 1; min-width: 0; }
 .file-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -183,18 +182,17 @@ a { color: inherit; }
 @keyframes indet { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
 
 /* ---------------------------------------------------------------- notices */
-.note { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 10px;
-  border: 1px solid var(--line); background: var(--bg-subtle); font-size: 14px; }
-.note svg { flex: none; margin-top: 2px; color: var(--muted); }
+.note { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--bg); font-size: 14px; }
+.note > div { padding-top: 5px; }
+.note-icon { width: 32px; height: 32px; flex: none; border-radius: 8px; display: grid; place-items: center;
+  background: var(--bg-subtle); border: 1px solid var(--line); color: var(--muted); }
 .note p { margin: 0; }
 .note .t { font-weight: 500; }
 .note .s { color: var(--muted); margin-top: 2px; }
-.note.ok { background: var(--ok-bg); border-color: color-mix(in srgb, var(--ok) 25%, transparent); }
-.note.ok svg { color: var(--ok); }
-.note.warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
-.note.warn svg { color: var(--warn); }
-.note.err { background: var(--err-bg); border-color: color-mix(in srgb, var(--err) 30%, transparent); }
-.note.err svg { color: var(--err); }
+.note.ok .note-icon { color: var(--ok); background: var(--ok-bg); border-color: transparent; }
+.note.warn .note-icon { color: var(--warn); background: var(--warn-bg); border-color: transparent; }
+.note.err .note-icon { color: var(--err); background: var(--err-bg); border-color: transparent; }
 .note + .note, .note + .list, .list + .note { margin-top: 12px; }
 .kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 16px; margin: 10px 0 0; font-size: 13px; }
 .kv dt { color: var(--muted); }
@@ -297,11 +295,6 @@ details.more summary:hover { color: var(--fg); }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
 }
 
-/* ---------------------------------------------------------------- build + preview */
-.build { margin-top: 16px; }
-.build-t { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font-weight: 500; font-size: 14px; }
-.preview { background: #000; border-radius: 12px; padding: 4px; border: 1px solid var(--line); overflow: hidden; }
-.font-preview { display: block; height: auto; max-width: 100%; }
 
 /* ---------------------------------------------------------------- language picker */
 .lang-row { gap: 12px; }

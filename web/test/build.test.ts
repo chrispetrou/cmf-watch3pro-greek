@@ -26,14 +26,10 @@ describe.skipIf(!have)("in-browser build (Pyodide)", async () => {
     it(`matches the CLI for ${langs}`, () => {
       const list = langs.split(",");
       const docs = Object.fromEntries(list.map((l) => [l, readFileSync(`public/glyphs/${l}.json`, "utf8")]));
-      const lines = [["greek", "Φτάνω σε 10 λεπτά,"], ["georgian", "ხვალ 10 საათზე"]].filter(([l]) => list.includes(l));
-      const res = run(orig, py.toPy(list), py.toPy(docs), py.toPy(lines), () => {});
-      const [img, ok, preview] = res.toJs() as [Uint8Array, boolean, string];
+      const res = run(orig, py.toPy(list), py.toPy(docs), () => {});
+      const [img, ok] = res.toJs() as [Uint8Array, boolean];
       expect(ok).toBe(true);
       expect(createHash("sha256").update(img).digest("hex")).toBe(sha);
-      const p = JSON.parse(preview);
-      expect(p.lines.length).toBeGreaterThan(0);
-      expect(p.lines.flatMap((l: { glyphs: unknown[] }) => l.glyphs).filter((g: unknown) => g === null)).toHaveLength(0);
     }, 120000);
   }
 });
