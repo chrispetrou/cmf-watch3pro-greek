@@ -20,6 +20,14 @@ FONTS = {
         "file": "Inter-Medium.ttf",
         "sha256": "1bda81124d6ae26ed16a7201e2bd93766af5a3b14faf79eea14d191ebbd41146",
     },
+    "noto-georgian": {
+        "name": "Noto Sans Georgian v2.005 Medium",
+        "url": "https://github.com/notofonts/georgian/releases/download/"
+               "NotoSansGeorgian-v2.005/NotoSansGeorgian-v2.005.zip",
+        "member": "unhinted/ttf/NotoSansGeorgian-Medium.ttf",
+        "file": "NotoSansGeorgian-Medium.ttf",
+        "sha256": "4ab94cd342f4db4b8a722d3e52f06ab59a378b15c6a604e4af22e26dba2246fd",
+    },
 }
 
 LANGUAGES = {
@@ -34,6 +42,21 @@ LANGUAGES = {
             "νξοπρσςτυφχψω",
             "άέήίόύώ ϊϋΐΰ ΆΈΉΊΌΎΏ",
             "0123456789 ; · « »",
+        ],
+    },
+    # Inter has no Georgian. Noto Sans Georgian Medium has almost the same
+    # x-height and cap height (0.539/0.714 em vs Inter's 0.546/0.728).
+    "georgian": {
+        "name": "Georgian",
+        "font": "noto-georgian",
+        "ranges": [(0x10A0, 0x10FF), (0x1C90, 0x1CBF)],   # Mkhedruli, Asomtavruli, Mtavruli
+        "sample": [
+            "აბგდევზთიკლმნო",
+            "პჟრსტუფქღყშჩც",
+            "ძწჭხჯჰ",
+            "გამარჯობა, საქართველო!",
+            "Hello გამარჯობა 123",
+            "ᲡᲐᲥᲐᲠᲗᲕᲔᲚᲝ",
         ],
     },
 }
