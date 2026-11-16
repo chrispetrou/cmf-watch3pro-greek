@@ -1,0 +1,35 @@
+name: Language request
+description: Ask for a language the watch can't display yet
+title: "Language request: "
+labels: ["language request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! Please don't attach firmware files. See [CONTRIBUTING.md](https://github.com/chrispetrou/cmf-watch3pro-languages/blob/main/CONTRIBUTING.md#can-the-language-work) for which scripts can work on the watch.
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      placeholder: e.g. Armenian
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Sample text
+      description: The full alphabet (upper and lower case if it has both) and a few everyday phrases, e.g. a typical message or notification.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Special letters or accents, a font you know looks good, etc.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Can you help?
+      options:
+        - label: I read this language and can check a preview image
+        - label: I own a CMF Watch 3 Pro and can test a build on it
