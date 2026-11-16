@@ -43,9 +43,11 @@ def parse_langs(text):
     """'greek,georgian' -> ['georgian', 'greek'] (sorted, so the build doesn't depend on the order)."""
     langs = sorted({s.strip().lower() for s in (text or "").split(",") if s.strip()})
     unknown = [s for s in langs if s not in LANGUAGES]
-    if not langs or unknown:
-        raise SystemExit(f"unknown or missing language {', '.join(unknown)}; "
-                         f"choose from: {', '.join(sorted(LANGUAGES))}")
+    known = ", ".join(sorted(LANGUAGES))
+    if not langs:
+        raise SystemExit(f"--lang is required; choose from: {known}")
+    if unknown:
+        raise SystemExit(f"unknown language {', '.join(unknown)}; choose from: {known}")
     return langs
 
 
