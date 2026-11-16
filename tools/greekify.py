@@ -32,12 +32,13 @@ import sys
 import time
 import urllib.parse
 import urllib.request
-import zipfile
 import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
+from fetch import UA, download     # noqa: E402
+from languages import fetch_font   # noqa: E402
 
 CACHE = os.path.join(ROOT, "cache")
 FWDIR = os.path.join(ROOT, "firmware")
@@ -47,10 +48,7 @@ MODEL_ID = "D399"                     # CMF Watch 3 Pro in the Nothing Archive d
 BOARD = "JX402_08"
 ARCHIVE_JSON = ("https://raw.githubusercontent.com/spike0en/nothing_archive/main/"
                 "website/src/data/accessories_updates.json")
-INTER_ZIP = "https://github.com/rsms/inter/releases/download/v4.0/Inter-4.0.zip"
-INTER_TTF_SHA256 = "1bda81124d6ae26ed16a7201e2bd93766af5a3b14faf79eea14d191ebbd41146"
 LV_FONT_CONV = "lv_font_conv@1.5.3"
-UA = {"User-Agent": "cmf-greek-tools/1.0"}
 # The archive list is third-party data, so only follow links to Nothing's own OTA CDN.
 OFFICIAL_HOSTS = {"dmen2t88o28qi.cloudfront.net"}
 
@@ -64,27 +62,6 @@ def die(msg, code=1):
     sys.exit(code)
 
 
-def download(url, dst):
-    tmp = dst + ".part"
-    req = urllib.request.Request(url, headers=UA)
-    with urllib.request.urlopen(req, timeout=60) as r, open(tmp, "wb") as f:
-        total = int(r.headers.get("Content-Length") or 0)
-        done, shown = 0, -1
-        while True:
-            b = r.read(1 << 16)
-            if not b:
-                break
-            f.write(b)
-            done += len(b)
-            if total and (done * 20 // total) != shown:
-                shown = done * 20 // total
-                sys.stdout.write(f"\r    {done/1e6:6.1f} / {total/1e6:.1f} MB")
-                sys.stdout.flush()
-    if total:
-        print()
-    os.replace(tmp, dst)
-
-
 # ---------------------------------------------------------------- toolchain
 def ensure_toolchain():
     os.makedirs(CACHE, exist_ok=True)
@@ -94,18 +71,7 @@ def ensure_toolchain():
         subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r",
                         os.path.join(ROOT, "requirements.txt")], check=True)
 
-    ttf = os.path.join(CACHE, "Inter-Medium.ttf")
-    if not os.path.exists(ttf):
-        say("downloading Inter v4.0")
-        z = os.path.join(CACHE, "Inter-4.0.zip")
-        download(INTER_ZIP, z)
-        with zipfile.ZipFile(z) as zf:
-            name = next(n for n in zf.namelist() if n.endswith("extras/ttf/Inter-Medium.ttf"))
-            with zf.open(name) as src, open(ttf, "wb") as dst:
-                shutil.copyfileobj(src, dst)
-        os.remove(z)
-    if hashlib.sha256(open(ttf, "rb").read()).hexdigest() != INTER_TTF_SHA256:
-        die(f"{ttf} is not the expected Inter v4.0 Medium; delete it and re-run")
+    ttf = fetch_font("inter", CACHE)
 
     conv = os.path.join(CACHE, "lvconv", "node_modules", ".bin", "lv_font_conv")
     if not os.path.exists(conv):
