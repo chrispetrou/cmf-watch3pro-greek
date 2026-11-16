@@ -18,6 +18,7 @@ The image above is rendered from the patched font itself (`tools/render_preview.
 | Language | `--lang` | Glyphs from | Matches the watch's typeface | Tested on a watch |
 |---|---|---|---|---|
 | Greek | `greek` | Inter v4.0 Medium | Yes, it's the same font | Yes (1.0.1.77) |
+| Georgian | `georgian` | [Noto Sans Georgian](https://github.com/notofonts/georgian) v2.005 Medium | Close, not identical ([preview](docs/previews/georgian.png)) | Not yet |
 
 Several languages can go into one image, separated by commas in `--lang`. Korean is removed to make room, which leaves space for many more alphabets. See [Adding a language](#adding-a-language).
 
@@ -151,5 +152,5 @@ docs/
 AGPL-3.0, see [LICENSE](LICENSE).
 
 - The BLE protocol code (`cmf_ble.py`, `cmf_client.py`) is ported from [Gadgetbridge](https://codeberg.org/Freeyourgadget/Gadgetbridge)'s `cmfwatchpro` support, which is AGPL-3.0. That's why the whole repo uses the same license.
-- Glyphs are rendered from [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL Open Font License 1.1) and, for scripts Inter doesn't cover, the fonts listed in the Languages table. No fonts are included, the scripts download them.
+- Glyphs are rendered from [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL Open Font License 1.1) and, for scripts Inter doesn't cover, the fonts listed in the Languages table (Noto fonts are also under the SIL Open Font License 1.1). No fonts are included, the scripts download them.
 - Please don't open issues or PRs with firmware images or patched `.bin` files.
