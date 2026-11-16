@@ -4,7 +4,7 @@ The CMF Watch 3 Pro can't display Greek. Its only text font has Latin, Cyrillic,
 
 This repo patches the Greek glyphs into the official firmware and flashes it to the watch over Bluetooth from a computer, without going through the Nothing X app. I've been running it on my own watch (firmware 1.0.1.77) and Greek notifications display fine.
 
-![Greek characters rendered with the patched watch font](docs/greek-preview.png)
+![Greek characters rendered with the patched watch font](docs/previews/greek.png)
 
 The image above is rendered from the patched font itself (`tools/render_preview.py`), so it's exactly what the watch draws.
 

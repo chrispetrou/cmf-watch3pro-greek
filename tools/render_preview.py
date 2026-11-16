@@ -1,29 +1,26 @@
 """
-Render sample text with the watch's own font, pixel-exact, from a (patched) firmware image.
+Render sample text with the watch's own font, pixel-exact, from a patched firmware image.
 
-  ./venv/bin/python tools/render_preview.py firmware/CMF_Watch3Pro_1.0.1.77_greek.bin docs/greek-preview.png
+  ./venv/bin/python tools/render_preview.py firmware/CMF_Watch3Pro_1.0.1.77_greek.bin \
+      docs/previews/greek.png --lang greek
 
 The glyphs are decoded straight from sans36.font inside the image, so the PNG
 shows exactly what the watch draws (2 bpp anti-aliasing, white on black).
+The sample lines for each language are in tools/languages.py. Needs Pillow
+(pip install pillow).
 """
+import argparse
 import os
 import sys
 
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from languages import LANGUAGES, parse_langs     # noqa: E402
 from lvfont import LvFont                        # noqa: E402
 from repack import parse_aota, unlzma            # noqa: E402
 from sdfs import entries                         # noqa: E402
 
-LINES = [
-    "ΑΒΓΔΕΖΗΘΙΚΛΜ",
-    "ΝΞΟΠΡΣΤΥΦΧΨΩ",
-    "αβγδεζηθικλμ",
-    "νξοπρσςτυφχψω",
-    "άέήίόύώ ϊϋΐΰ ΆΈΉΊΌΎΏ",
-    "0123456789 ; · « »",
-]
 PAD, LINE_GAP = 24, -14
 
 
@@ -55,11 +52,15 @@ def render(font, lines):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        sys.exit(__doc__)
-    f = load_font(sys.argv[1])
-    missing = sorted({c for ln in LINES for c in ln if c != " " and not f.gid(ord(c))})
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("image")
+    ap.add_argument("out")
+    ap.add_argument("--lang", required=True, help="comma-separated languages whose samples to render")
+    a = ap.parse_args()
+    lines = [ln for lang in parse_langs(a.lang) for ln in LANGUAGES[lang]["sample"]]
+    f = load_font(a.image)
+    missing = sorted({c for ln in lines for c in ln if c != " " and not f.gid(ord(c))})
     if missing:
         print("not in font:", "".join(missing))
-    render(f, LINES).save(sys.argv[2])
-    print("wrote", sys.argv[2])
+    render(f, lines).save(a.out)
+    print("wrote", a.out)
