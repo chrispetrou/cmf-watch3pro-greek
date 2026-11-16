@@ -143,14 +143,14 @@ def get_firmware(args):
 
 
 def build_greek(ver, official):
-    from build_greek_firmware import build_image
+    from build_firmware import build_image
     ttf, conv = ensure_toolchain()
     out = os.path.join(FWDIR, f"CMF_Watch3Pro_{ver}_greek.bin")
     if os.path.exists(out) and os.path.getmtime(out) > os.path.getmtime(official):
         say(f"Greek image already built: {os.path.relpath(out, ROOT)}")
         return out
     say(f"building Greek image for {ver}")
-    if not build_image(official, ttf, out, conv):
+    if not build_image(official, ["greek"], out, conv, CACHE):
         os.rename(out, out + ".UNSAFE")
         die("font version check failed: the app would reject this image at boot. "
             "Not flashing. See docs/firmware-format.md (expected-version table).", 2)
