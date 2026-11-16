@@ -1,18 +1,19 @@
 """
-Fetch the latest CMF Watch 3 Pro firmware, add the Greek glyphs and flash it.
+Fetch the latest CMF Watch 3 Pro firmware, add the glyphs for one or more languages and flash it.
 
-  ./venv/bin/python tools/greekify.py              # check -> download -> build -> (confirm) -> flash -> verify
-  ./venv/bin/python tools/greekify.py check        # just show watch version vs latest release
-  ./venv/bin/python tools/greekify.py build        # download + build only, no Bluetooth
-  ./venv/bin/python tools/greekify.py flash        # build if needed, then flash
+  ./venv/bin/python tools/patch.py --lang greek          # check -> download -> build -> (confirm) -> flash -> verify
+  ./venv/bin/python tools/patch.py check                 # just show watch version vs latest release
+  ./venv/bin/python tools/patch.py build --lang greek    # download + build only, no Bluetooth
+  ./venv/bin/python tools/patch.py flash --lang greek    # build if needed, then flash
 
 Options:
+  --lang LANGS           comma-separated languages to add (see tools/languages.py), e.g. greek
   --file PATH            use a local official .bin instead of downloading
   --url URL              download this official .bin instead of looking it up
   --address ADDR         watch BLE address (else remembered / scanned)
   --yes                  don't ask for confirmation before flashing
   --allow-version-change flash even if the watch is on a different version than the image
-                         (installs the update + Greek in one go; not tested yet; see docs/updating.md)
+                         (installs the update + patch in one go; not tested yet; see docs/updating.md)
 
 Firmware lookup uses the Nothing Archive's machine-readable list
 (github.com/spike0en/nothing_archive, model D399 = Watch 3 Pro); the
@@ -32,12 +33,13 @@ import sys
 import time
 import urllib.parse
 import urllib.request
-import zipfile
 import zlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
+from fetch import UA, download     # noqa: E402
+from languages import parse_langs  # noqa: E402
 
 CACHE = os.path.join(ROOT, "cache")
 FWDIR = os.path.join(ROOT, "firmware")
@@ -47,10 +49,7 @@ MODEL_ID = "D399"                     # CMF Watch 3 Pro in the Nothing Archive d
 BOARD = "JX402_08"
 ARCHIVE_JSON = ("https://raw.githubusercontent.com/spike0en/nothing_archive/main/"
                 "website/src/data/accessories_updates.json")
-INTER_ZIP = "https://github.com/rsms/inter/releases/download/v4.0/Inter-4.0.zip"
-INTER_TTF_SHA256 = "1bda81124d6ae26ed16a7201e2bd93766af5a3b14faf79eea14d191ebbd41146"
 LV_FONT_CONV = "lv_font_conv@1.5.3"
-UA = {"User-Agent": "cmf-greek-tools/1.0"}
 # The archive list is third-party data, so only follow links to Nothing's own OTA CDN.
 OFFICIAL_HOSTS = {"dmen2t88o28qi.cloudfront.net"}
 
@@ -64,27 +63,6 @@ def die(msg, code=1):
     sys.exit(code)
 
 
-def download(url, dst):
-    tmp = dst + ".part"
-    req = urllib.request.Request(url, headers=UA)
-    with urllib.request.urlopen(req, timeout=60) as r, open(tmp, "wb") as f:
-        total = int(r.headers.get("Content-Length") or 0)
-        done, shown = 0, -1
-        while True:
-            b = r.read(1 << 16)
-            if not b:
-                break
-            f.write(b)
-            done += len(b)
-            if total and (done * 20 // total) != shown:
-                shown = done * 20 // total
-                sys.stdout.write(f"\r    {done/1e6:6.1f} / {total/1e6:.1f} MB")
-                sys.stdout.flush()
-    if total:
-        print()
-    os.replace(tmp, dst)
-
-
 # ---------------------------------------------------------------- toolchain
 def ensure_toolchain():
     os.makedirs(CACHE, exist_ok=True)
@@ -94,19 +72,6 @@ def ensure_toolchain():
         subprocess.run([sys.executable, "-m", "pip", "install", "-q", "-r",
                         os.path.join(ROOT, "requirements.txt")], check=True)
 
-    ttf = os.path.join(CACHE, "Inter-Medium.ttf")
-    if not os.path.exists(ttf):
-        say("downloading Inter v4.0")
-        z = os.path.join(CACHE, "Inter-4.0.zip")
-        download(INTER_ZIP, z)
-        with zipfile.ZipFile(z) as zf:
-            name = next(n for n in zf.namelist() if n.endswith("extras/ttf/Inter-Medium.ttf"))
-            with zf.open(name) as src, open(ttf, "wb") as dst:
-                shutil.copyfileobj(src, dst)
-        os.remove(z)
-    if hashlib.sha256(open(ttf, "rb").read()).hexdigest() != INTER_TTF_SHA256:
-        die(f"{ttf} is not the expected Inter v4.0 Medium; delete it and re-run")
-
     conv = os.path.join(CACHE, "lvconv", "node_modules", ".bin", "lv_font_conv")
     if not os.path.exists(conv):
         if not shutil.which("npm"):
@@ -114,7 +79,7 @@ def ensure_toolchain():
         say(f"installing {LV_FONT_CONV}")
         subprocess.run(["npm", "install", "--silent", "--prefix", os.path.join(CACHE, "lvconv"),
                         LV_FONT_CONV], check=True)
-    return ttf, conv
+    return conv
 
 
 # ---------------------------------------------------------------- firmware
@@ -176,15 +141,15 @@ def get_firmware(args):
     return ver, path
 
 
-def build_greek(ver, official):
-    from build_greek_firmware import build_image
-    ttf, conv = ensure_toolchain()
-    out = os.path.join(FWDIR, f"CMF_Watch3Pro_{ver}_greek.bin")
+def build_patched(ver, official, langs):
+    from build_firmware import build_image
+    conv = ensure_toolchain()
+    out = os.path.join(FWDIR, f"CMF_Watch3Pro_{ver}_{'-'.join(langs)}.bin")
     if os.path.exists(out) and os.path.getmtime(out) > os.path.getmtime(official):
-        say(f"Greek image already built: {os.path.relpath(out, ROOT)}")
+        say(f"patched image already built: {os.path.relpath(out, ROOT)}")
         return out
-    say(f"building Greek image for {ver}")
-    if not build_image(official, ttf, out, conv):
+    say(f"building {ver} with {', '.join(langs)}")
+    if not build_image(official, langs, out, conv, CACHE):
         os.rename(out, out + ".UNSAFE")
         die("font version check failed: the app would reject this image at boot. "
             "Not flashing. See docs/firmware-format.md (expected-version table).", 2)
@@ -198,7 +163,7 @@ async def find_address(args):
     if os.path.exists(ADDR_FILE):
         return open(ADDR_FILE).read().strip()
     import cmf_client as C
-    say("scanning for the watch (12 s); make sure the iPhone isn't connected to it")
+    say("scanning for the watch (12 s); make sure the phone isn't connected to it")
     rows = await C.scan(12)
     cands = [r for r in rows if any(k in (r[0] or "").lower() for k in ("cmf", "watch", "nothing"))]
     if not cands:
@@ -219,19 +184,19 @@ async def watch_version(addr):
         await cl.disconnect()
 
 
-async def flash(args, ver, image):
+async def flash(args, ver, image, langs):
     import cmf_flash
     addr = await find_address(args)
     cur = await watch_version(addr)
     open(ADDR_FILE, "w").write(addr)
-    say(f"watch is on {cur}; image is {ver} + Greek")
+    say(f"watch is on {cur}; image is {ver} + {', '.join(langs)}")
     if cur.startswith("0."):
         say("watch is in upgrade/recovery mode; flashing will repair it (slow: hours)")
     elif cur != ver and not args.allow_version_change:
         die(f"watch runs {cur} but the image is {ver}. Either install the official {ver} update "
             f"via Nothing X first, or re-run with --allow-version-change (untested).")
     if not args.yes:
-        print("\n  Keep the watch on its charger, the Mac awake and nearby.\n"
+        print("\n  Keep the watch on its charger, the computer awake and nearby.\n"
               "  The upload takes ~30 min; the watch then installs and reboots by itself.")
         if input("  Flash now? [y/N] ").strip().lower() != "y":
             die("aborted by user", 0)
@@ -251,7 +216,7 @@ async def flash(args, ver, image):
     if v.startswith("0."):
         die(f"watch reports {v}: it rejected the image and is in upgrade mode. "
             f"Recover with: ./venv/bin/python tools/cmf_flash.py {addr} <official .bin>")
-    say(f"done, the watch runs {v} with Greek. Now pair it with the phone again in Nothing X.")
+    say(f"done, the watch runs {v} with {', '.join(langs)}. Now pair it with the phone again in Nothing X.")
 
 
 async def check(args):
@@ -265,12 +230,13 @@ async def check(args):
     except SystemExit:
         raise
     except Exception as e:
-        say(f"couldn't read the watch ({e}); is it disconnected from the iPhone?")
+        say(f"couldn't read the watch ({e}); is it disconnected from the phone?")
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", nargs="?", default="all", choices=["all", "check", "build", "flash"])
+    ap.add_argument("--lang", help="comma-separated languages to add, e.g. greek")
     ap.add_argument("--file")
     ap.add_argument("--url")
     ap.add_argument("--address")
@@ -281,12 +247,13 @@ def main():
     if args.cmd == "check":
         asyncio.run(check(args))
         return
+    langs = parse_langs(args.lang)
     ver, official = get_firmware(args)
-    image = build_greek(ver, official)
+    image = build_patched(ver, official, langs)
     if args.cmd == "build":
         say(f"ready: {os.path.relpath(image, ROOT)}")
         return
-    asyncio.run(flash(args, ver, image))
+    asyncio.run(flash(args, ver, image, langs))
 
 
 if __name__ == "__main__":
