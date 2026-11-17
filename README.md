@@ -2,7 +2,7 @@
 
 The CMF Watch 3 Pro can only display the characters in its built-in font. That font covers Latin (including Vietnamese), Cyrillic, Chinese, Japanese and Korean, and also has the letters of Hebrew, Arabic, Thai and Devanagari (whether those display correctly, right to left or with joined letters, hasn't been checked). Notifications in scripts it doesn't have, like Greek, Georgian or Armenian, show up as empty boxes.
 
-This repo adds the missing letters to the official firmware's font and flashes it to the watch over Bluetooth from a computer, without going through the Nothing X app. It started as a Greek fix, which I've been running on my own watch (firmware 1.0.1.77), and now takes a list of languages.
+This repo adds the missing letters to the official firmware's font and flashes it to the watch over Bluetooth from a computer, without going through the Nothing X app. It started as a Greek fix, which I've been running on my own watch (firmware 1.0.1.77), and now takes a list of languages. It can also add about 450 [emoji](#emoji) the watch doesn't have.
 
 https://github.com/user-attachments/assets/744b2420-38c5-4d07-858b-6cd9dedf29c9
 
@@ -38,7 +38,7 @@ Emoji made of several characters, like 👨‍👩‍👧, show as their separat
 
 **Use it at [watchlanguages.app](https://watchlanguages.app).**
 
-`web/` is a browser version for people who'd rather not use a terminal: choose the languages, add the official update file, connect the watch over Web Bluetooth and install. It builds the image with the same Python code as the scripts (run in the browser with Pyodide), so the result is identical byte for byte. It needs Chrome or Edge on a computer, or Chrome on Android, and has been tested on a watch with Greek, Georgian and Armenian. An install takes about 6 minutes plus the restart.
+`web/` is a browser version for people who'd rather not use a terminal: choose the languages and whether to add more emoji, add the official update file, connect the watch over Web Bluetooth and install. It builds the image with the same Python code as the scripts (run in the browser with Pyodide), so the result is identical byte for byte. It needs Chrome or Edge on a computer, or Chrome on Android, and has been tested on a watch with Greek, Georgian and Armenian. An install takes about 6 minutes plus the restart.
 
 So far it has been tested on macOS with Chrome and with Dia; other browsers built on Chrome (Edge, Arc, Opera) should work the same. Windows, Linux, ChromeOS and Android support Web Bluetooth too, so it should work there, but nobody has tried it yet. It can't work on iPhone or iPad, in any browser: they all run on Safari's engine, which has no Web Bluetooth. If you do, please [open an issue](https://github.com/chrispetrou/cmf-watch3pro-languages/issues) and say how it went. [web/README.md](web/README.md) explains how to run it locally.
 
@@ -88,9 +88,10 @@ Bluetooth headphones connected to the computer (AirPods, for example) may stutte
 1. The official update is a single file (Actions "AOTA" format) with a few compressed parts: the main app, image resources and one font partition.
 2. The font partition holds `sans36.font`, an LVGL bitmap font, and `emoji28.font` with 53 colour emoji. `sans36.font` covers Latin, Cyrillic, CJK and Hangul, plus Hebrew, Arabic, Thai and Devanagari letters, but no Greek, Georgian or Armenian.
 3. The stock glyphs turned out to be Inter v4.0 Medium at 36 px. Re-rendering the Latin letters with it gives identical bytes. Each language's letters are rendered with the same settings, from Inter when it has them (Greek) or from a similar font when it doesn't (Georgian and Armenian come from Noto Sans Georgian and Noto Sans Armenian), and appended to `sans36.font`.
-4. The font partition has a fixed size, so the Hangul syllables are dropped to make room. Everything else stays byte for byte the same.
-5. The font is repacked and every checksum in the image is recomputed. See [docs/firmware-format.md](docs/firmware-format.md#checksums-how-they-were-worked-out) for how the checksum rules were worked out.
-6. Nothing X refuses modified images, so `cmf_flash.py` talks to the watch over BLE directly, using the protocol from Gadgetbridge's CMF Watch Pro support. The watch pulls the file and installs it like a normal update.
+4. With `--emoji`, colour emoji are added to `emoji28.font` and the symbols below U+1F300 to `sans36.font` (see [Emoji](#emoji)).
+5. The font partition has a fixed size, so the Hangul syllables are dropped to make room. Everything else stays byte for byte the same.
+6. The font is repacked and every checksum in the image is recomputed. See [docs/firmware-format.md](docs/firmware-format.md#checksums-how-they-were-worked-out) for how the checksum rules were worked out.
+7. Nothing X refuses modified images, so `cmf_flash.py` talks to the watch over BLE directly, using the protocol from Gadgetbridge's CMF Watch Pro support. The watch pulls the file and installs it like a normal update.
 
 The full story, including the approaches that didn't work, is in [docs/process.md](docs/process.md).
 
@@ -131,7 +132,7 @@ The first connection pairs with the watch and stores the key in `tools/authkey.h
 
 ## After an official update
 
-An official update replaces the font partition, so the added letters are gone again (the watch itself keeps working). Install the update through Nothing X, then run `patch.py` as in the quick start. It downloads the new release, patches it and flashes it.
+An official update replaces the font partition, so the added letters and emoji are gone again (the watch itself keeps working). Install the update through Nothing X, then run `patch.py` as in the quick start, with the same `--lang` and `--emoji` options as before. It downloads the new release, patches it and flashes it.
 
 `patch.py --allow-version-change` would install the update and the patch in one go, since the official update file is exactly what gets patched. I haven't tried it yet. See [docs/updating.md](docs/updating.md) for details and the manual route.
 

@@ -11,7 +11,7 @@ The watch draws one glyph per character, left to right, with no shaping. That wo
 - right-to-left scripts (Arabic, Hebrew): the letters would show in the wrong order;
 - scripts that need shaping (Arabic, Devanagari and other Indic scripts, Thai, Khmer): letters wouldn't join and marks would sit in the wrong place.
 
-Space isn't a real limit. Dropping Korean frees about 1.5 MB, and an alphabet takes 10 to 20 KB.
+Space is tight but not a real limit. Dropping Korean frees about 1.5 MB, the `--emoji` option uses about 1.2 MB of it, and an alphabet takes 10 to 20 KB. With Greek, Georgian, Armenian and the emoji, about 250 KB is left.
 
 ## Picking the font
 
@@ -68,6 +68,7 @@ The watch's own typeface is Inter v4.0 Medium at 36 px.
 
 - `--lang <lang>` builds, and the output says the font version matches the app's table.
 - `--lang greek` still builds sha256 `763357046b88553d32cf492e9d6f8882161b96fe80720022108641caf47cf3d9` from the 1.0.1.77 image, so existing languages are unchanged.
+- `--lang greek,georgian,armenian,<lang> --emoji` still fits in the font partition.
 - Combining languages gives the same image in any order (`--lang greek,<lang>` and `--lang <lang>,greek`).
 - `tools/unpack_aota.py` reports every part's CRC as OK.
 - The preview has no missing characters, and ideally someone who reads the language has looked at it.

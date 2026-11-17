@@ -1,6 +1,6 @@
 # Re-applying the patch after an official update
 
-An official update replaces the font partition, so the added letters disappear again. The watch keeps working normally.
+An official update replaces the font partition, so the added letters and emoji disappear again. The watch keeps working normally.
 
 ## With patch.py
 
@@ -8,6 +8,8 @@ An official update replaces the font partition, so the added letters disappear a
 ./venv/bin/python tools/patch.py check                # watch version vs. latest release
 ./venv/bin/python tools/patch.py --lang greek         # download, patch, flash, verify
 ```
+
+Use the same `--lang` and `--emoji` options as last time.
 
 By default the script only flashes when the watch already runs the same version as the image. So install the official update through Nothing X first, then forget the watch on the phone and run the script.
 
@@ -37,9 +39,11 @@ Keep the file as `firmware/ORIGINAL_<version>.bin`. It's also your recovery imag
   --out firmware/patched_<version>.bin
 ```
 
+Add `--emoji` if you had the extra emoji.
+
 The first line of output should say the font version matches the app's expected-version table. If it prints a warning instead, don't flash.
 
-If the build stops because the font image grew, the new stock font is bigger and dropping Hangul alone no longer frees enough room. More glyphs would have to go (extend the `drop` predicate in `build_firmware.py`).
+If the build stops because the font image grew, the new stock font is bigger and dropping Hangul alone no longer frees enough room. With `--emoji` this is more likely, since the emoji leave only about 250 KB spare; try the build without it first. More glyphs would have to go (extend the `drop` predicate in `build_firmware.py`).
 
 If Nothing ever switches typefaces, the added letters (still from Inter or the fonts in `tools/languages.py`) will look slightly different from the rest of the text, but they will still work.
 
