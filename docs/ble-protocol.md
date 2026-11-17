@@ -64,3 +64,20 @@ loop:
 The watch pulls the header, `ota.xml`, and then only the parts whose content differs from what is installed. On a normal flash it pulled about 3.9 KB per request, at roughly 25 KB/s. It then verifies the image, installs it and reboots.
 
 Set `CMF_OFFLOG=offsets.log` to record every requested `(offset, length)`. `CMF_DEBUG=1` hex-dumps the handshake.
+
+### Write mode and speed
+
+How each `DATA_CHUNK_WRITE` is sent matters more than anything else for speed. Each piece is split into packets of at most 180 bytes.
+
+- **With a confirmation per packet** (write with response), every packet waits for one Bluetooth round trip. In Chrome this gave about 2 KB/s, so a flash took close to an hour. Long writes of 512 bytes were slower still.
+- **Without a confirmation** (write without response), the packets of a piece go out back to back and the watch's next `DATA_CHUNK_REQUEST` is the only acknowledgement needed. In Chrome on macOS this measured 16.5 KB/s, about 6 minutes for a normal flash.
+
+The web app uses the fast mode. If the watch asks for nothing for 15 seconds, a packet was probably dropped: it switches to confirmed writes for the rest of the upload and sends the last requested piece again.
+
+### After FINISH_ACK2
+
+The watch verifies the image, installs it and restarts, which takes about a minute and a half. A browser cannot always reconnect by itself: Chrome on macOS reports "Bluetooth Device is no longer in range" for the old handle and needs the device picker again. The web app therefore treats `FINISH_ACK2` as the end of the install, waits 90 seconds, tries one silent reconnect, and otherwise offers a "Check the watch" button that opens the picker and reads `FIRMWARE_VERSION`.
+
+### Restoring the official firmware
+
+Sending the official image unchanged through the same upload puts the stock font back (and Korean with it). The web app offers this as "Remove the languages", and it is also the way out of upgrade mode (`0.x` version).
