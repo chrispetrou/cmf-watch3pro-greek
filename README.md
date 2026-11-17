@@ -4,10 +4,6 @@ The CMF Watch 3 Pro can only display the characters in its built-in font. That f
 
 This repo adds the missing letters to the official firmware's font and flashes it to the watch over Bluetooth from a computer, without going through the Nothing X app. It started as a Greek fix, which I've been running on my own watch (firmware 1.0.1.77), and now takes a list of languages.
 
-![Greek characters rendered with the patched watch font](docs/previews/greek.png)
-
-The image above is rendered from the patched font itself (`tools/render_preview.py`), so it's exactly what the watch draws.
-
 > [!WARNING]
 > This is an unofficial project and isn't affiliated with or endorsed by Nothing Technology Ltd. or CMF. The product names are only used to say what it works with. Flashing modified firmware may void your warranty, and a mistake can leave the watch in its upgrade/recovery mode. The steps to recover from that are below, but there are no guarantees. Use it at your own risk.
 >
@@ -17,7 +13,7 @@ The image above is rendered from the patched font itself (`tools/render_preview.
 
 | Language | `--lang` | Glyphs from | Matches the watch's typeface | Tested on a watch |
 |---|---|---|---|---|
-| Greek | `greek` | Inter v4.0 Medium | Yes, it's the same font | Yes (1.0.1.77) |
+| Greek | `greek` | Inter v4.0 Medium | Yes, it's the same font ([preview](docs/previews/greek.png)) | Yes (1.0.1.77) |
 | Georgian | `georgian` | [Noto Sans Georgian](https://github.com/notofonts/georgian) v2.005 Medium | Close, not identical ([preview](docs/previews/georgian.png)) | Yes (1.0.1.77) |
 | Armenian | `armenian` | [Noto Sans Armenian](https://github.com/notofonts/armenian) v2.008 Medium | Close, not identical ([preview](docs/previews/armenian.png)) | Yes (1.0.1.77) |
 
