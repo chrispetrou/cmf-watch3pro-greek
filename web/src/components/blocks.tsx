@@ -85,12 +85,12 @@ export function FileRow({ tone = "neutral", icon, name, mono, meta, action, chil
   );
 }
 
-/** The row under each step: a muted note on the left, buttons on the right; stacks on phones. */
+/** The row under each step: buttons on the left (main action first), then a muted note; stacks on phones. */
 export function Actions({ note, children }: { note?: ReactNode; children: ReactNode }) {
   return (
     <div className="mt-5 flex flex-wrap items-center gap-2 max-sm:[&>button]:flex-1 max-sm:[&>a]:flex-1">
-      <div className="flex-1 text-[13px] text-muted-foreground max-sm:basis-full">{note}</div>
       {children}
+      {note && <div className="ml-2 min-w-0 flex-1 text-[13px] text-muted-foreground max-sm:ml-0 max-sm:basis-full">{note}</div>}
     </div>
   );
 }

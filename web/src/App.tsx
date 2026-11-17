@@ -311,7 +311,7 @@ export default function App() {
       <Lede>{t.chooseLede}</Lede>
       <LanguagePicker languages={LANGS} selected={sel} onToggle={(id) => { setRestoreOnly(false); setSel({ ...sel, [id]: !sel[id] }); }} />
       <p className="mt-3 flex gap-2 text-[13px] text-muted-foreground"><Info className="mt-0.5 size-3.5 shrink-0" />{t.noKorean}</p>
-      <Actions note={<>{t.notTestedNote}{" "}<a className="text-foreground underline underline-offset-3" href={`${REPO}/issues`}>{t.tellUs}</a></>}>
+      <Actions note={LANGS.some((l) => !l.tested) && <>{t.notTestedNote}{" "}<a className="text-foreground underline underline-offset-3" href={`${REPO}/issues`}>{t.tellUs}</a></>}>
         <Button disabled={chosen.length === 0} onClick={() => { setRestoreOnly(false); if (fwOk) startBuild(fwOk, chosen.map((l) => l.id)); else setScreen("fwEmpty"); }}>{t.continue}</Button>
       </Actions>
       <button type="button" className="mt-4 text-[13px] text-muted-foreground underline decoration-input underline-offset-3 hover:text-foreground hover:decoration-current"
@@ -494,8 +494,8 @@ export default function App() {
             <div className="mt-3">
               <Notice tone="warn" icon={<TriangleAlert />} title={t.stopTitle}>{t.stopText}</Notice>
               <Actions>
-                <Button variant="ghost" onClick={() => setConfirmStop(false)}>{t.keepGoing}</Button>
                 <Button variant="outline" onClick={stopInstall}>{t.stopTransfer}</Button>
+                <Button variant="ghost" onClick={() => setConfirmStop(false)}>{t.keepGoing}</Button>
               </Actions>
             </div>
           ) : (
@@ -538,8 +538,8 @@ export default function App() {
             {t.pairSteps.map((s) => <li key={s} className="pl-1">{s}</li>)}
           </ol>
           <Actions>
-            <Button variant="ghost" asChild><a href={`${REPO}#readme`}>{t.readGuide}</a></Button>
             <Button onClick={startOver}>{t.startOver}</Button>
+            <Button variant="ghost" asChild><a href={`${REPO}#readme`}>{t.readGuide}</a></Button>
           </Actions>
         </>
       )}
@@ -550,8 +550,8 @@ export default function App() {
             {details()}
           </Notice>
           <Actions>
-            <Button variant="ghost" onClick={() => { setWatch(null); setScreen("prep"); }}>{t.connectAgain}</Button>
             <Button onClick={() => install(restoring ? [] : chosen.map((l) => l.id))}><RotateCw />{t.tryAgain}</Button>
+            <Button variant="ghost" onClick={() => { setWatch(null); setScreen("prep"); }}>{t.connectAgain}</Button>
           </Actions>
         </>
       )}
@@ -584,8 +584,8 @@ export default function App() {
         </ol>
         {details([[t.watch, watch?.name ?? ""], [t.reportedVersion, watch?.firmware ?? ""]])}
         <Actions>
-          <Button variant="ghost" asChild><a href={`${REPO}/issues`}>{t.getHelp}</a></Button>
           <Button disabled={!fwOk} onClick={() => install([])}>{t.restore}</Button>
+          <Button variant="ghost" asChild><a href={`${REPO}/issues`}>{t.getHelp}</a></Button>
         </Actions>
       </>
     ) : null;
