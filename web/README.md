@@ -21,6 +21,11 @@ What's real so far:
   watch that has just restarted until the user picks it again, so the page counts the install as
   done once the watch confirms the transfer and offers a "Check the watch" button.
 
+  Speed: the watch only asks for the parts that differ from what it runs, about 5.7 MB when the
+  fonts change. Sending each piece without a confirmation per packet gives about 16 KB/s on a Mac
+  with Chrome, so an install takes about 6 minutes plus the restart (it was about 50 minutes with
+  a confirmation per packet).
+
 `?demo` simulates every step instead and says so in a banner (`?demo=noverify` shows the case
 where the page can't reconnect after the install).
 
@@ -70,4 +75,4 @@ default). The technical log stays in English.
 
 1. Connect, pair, read the version (done).
 2. Build the patched image in the browser (done).
-3. Flash it (done; making the upload faster is in progress).
+3. Flash it (done).

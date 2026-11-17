@@ -22,7 +22,7 @@ const en = {
   heroTitle: "Read your language on the CMF Watch 3 Pro",
   heroText: (langs: string) => `Adds ${langs} letters to the watch’s own font, in your browser. Free and open source. Not affiliated with Nothing or CMF.`,
   heroLangs: "Greek, Georgian or Armenian",
-  footer: "Not affiliated with Nothing or CMF. Use at your own risk. No firmware is hosted here, everything is processed on your device.",
+  footer: "Not affiliated with Nothing or CMF. Use at your own risk. No firmware is provided here, everything is processed on your device.",
   guide: "Guide",
   license: "License",
 
@@ -87,7 +87,7 @@ const en = {
   // 3. connect
   prep: [
     ["Turn off Bluetooth on your phone", "Otherwise the phone keeps the watch to itself. You turn it back on at the end."],
-    ["Put the watch on its charger", "Leave it there until the end. Installing can take up to an hour."],
+    ["Put the watch on its charger", "Leave it there until the end. Installing usually takes about 10 minutes."],
     ["Keep this tab open until it’s done", "Don’t let the screen lock, and keep the watch fairly close to this device."],
   ] as [string, string][],
   stoppedTitle: "Transfer stopped",
@@ -108,7 +108,7 @@ const en = {
   watch: "Watch",
   watchFw: "Watch firmware",
   updateFile: "Update file",
-  upTo30: "Installing can take up to an hour.",
+  upTo30: "Installing usually takes about 10 minutes.",
   startInstall: "Start install",
   mismatchTitle: "The watch is on a different version",
   mismatchOlder: (file: string, watch: string) => `The update file is for ${file}, but the watch has ${watch}. Update the watch with Nothing X first, then connect again.`,
@@ -271,7 +271,7 @@ const el: Strings = {
 
   prep: [
     ["Κλείσε το Bluetooth στο κινητό σου", "Αλλιώς το κινητό εμποδίζει το ρολόι από το να συνδεθεί. Μπορείς να το ανοίξεις ξανά στο τέλος."],
-    ["Τοποθέτησε το ρολόι στον φορτιστή", "Άφησέ το εκεί μέχρι το τέλος. Η εγκατάσταση μπορεί να κρατήσει έως και μία ώρα."],
+    ["Τοποθέτησε το ρολόι στον φορτιστή", "Άφησέ το εκεί μέχρι το τέλος. Η εγκατάσταση συνήθως διαρκεί περίπου 10 λεπτά."],
     ["Μην κλείσεις αυτό το tab μέχρι να ολοκληρωθεί η διαδικασία", "Μην αφήσεις την οθόνη να κλειδώσει και τοποθέτησε το ρολόι σε σχετικά κοντινή απόσταση."],
   ],
   stoppedTitle: "Η μεταφορά σταμάτησε",
@@ -292,7 +292,7 @@ const el: Strings = {
   watch: "Ρολόι",
   watchFw: "Firmware ρολογιού",
   updateFile: "Αρχείο ενημέρωσης",
-  upTo30: "Η εγκατάσταση μπορεί να κρατήσει έως και μία ώρα.",
+  upTo30: "Η εγκατάσταση συνήθως διαρκεί περίπου 10 λεπτά.",
   startInstall: "Έναρξη εγκατάστασης",
   mismatchTitle: "Το ρολόι έχει άλλη έκδοση",
   mismatchOlder: (file: string, watch: string) => `Το αρχείο ενημέρωσης είναι για την ${file}, αλλά το ρολόι έχει την ${watch}. Ενημέρωσε πρώτα το ρολόι από το Nothing X και σύνδεσέ το ξανά.`,
