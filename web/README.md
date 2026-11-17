@@ -35,7 +35,9 @@ GitHub Pages only serves the files, including the fonts (bundled, no Google Font
 The only other request is the Nothing Archive's release list on raw.githubusercontent.com, to
 find the latest firmware version.
 
-Needs Chrome or Edge on a computer or Android phone (no Safari, Firefox or iPhone). To run it
+Needs Chrome or Edge on a computer or Android phone (no Safari, Firefox or iPhone). Only macOS
+with Chrome has been tested; Windows, Linux, ChromeOS and Android should work but are untested
+(Android in particular may differ in how pairing prompts and packet sizes behave). To run it
 locally you need Node 22.
 
 ```bash

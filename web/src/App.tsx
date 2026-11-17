@@ -1,7 +1,7 @@
 // Watch Languages: choose languages, add the official firmware, connect, install.
 import { type DragEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bluetooth, Check, Code, Copy, Download, FileUp, Moon, RotateCw, Sun, TriangleAlert, Watch as WatchIcon, X,
+  Bluetooth, Check, Code, Copy, Download, FileUp, Info, Moon, RotateCw, Sun, TriangleAlert, Watch as WatchIcon, X,
 } from "lucide-react";
 import { Actions, Details, FileRow, Notice, Spinner } from "@/components/blocks";
 import { Badge } from "@/components/ui/badge";
@@ -304,6 +304,7 @@ export default function App() {
     <>
       <Lede>{t.chooseLede}</Lede>
       <LanguagePicker languages={LANGS} selected={sel} onToggle={(id) => setSel({ ...sel, [id]: !sel[id] })} />
+      <p className="mt-3 flex gap-2 text-[13px] text-muted-foreground"><Info className="mt-0.5 size-3.5 shrink-0" />{t.noKorean}</p>
       <Actions note={<>{t.notTestedNote}{" "}<a className="text-foreground underline underline-offset-3" href={`${REPO}/issues`}>{t.tellUs}</a></>}>
         <Button disabled={chosen.length === 0} onClick={() => (fwOk ? startBuild(fwOk) : setScreen("fwEmpty"))}>{t.continue}</Button>
       </Actions>
