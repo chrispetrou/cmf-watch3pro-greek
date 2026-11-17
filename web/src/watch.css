@@ -68,3 +68,17 @@
 ::view-transition-old(*.step), ::view-transition-new(*.step) { height: auto; }
 @keyframes vt-out { to { opacity: 0; } }
 @keyframes vt-in { from { opacity: 0; transform: translateY(-4px); } }
+
+/* GlyphField: the band at the bottom of the page where empty boxes turn into letters. */
+.gf { display: grid; grid-auto-rows: 30px; overflow: hidden; user-select: none; pointer-events: none; }
+.gf-band { height: 150px; mask-composite: intersect;
+  mask-image: linear-gradient(to bottom, transparent, #000 45%), linear-gradient(to right, transparent, #000 15%, #000 85%, transparent); }
+.gf-patch { position: absolute; inset: 0; align-content: center; mask-image: radial-gradient(closest-side, #000 35%, transparent); }
+.gf > span { display: grid; place-items: center; font-size: 17px; font-weight: 500; line-height: 1; color: var(--faint); opacity: 0.45;
+  transition: color 1.2s ease-out, opacity 1.2s ease-out; }
+/* The box the watch draws for a missing letter. */
+.gf > .gf-b::before { content: ""; width: 0.55em; height: 0.78em; border: 1.25px solid currentColor; border-radius: 2px; }
+.gf > .gf-b { opacity: 0.35; }
+.gf > .gf-hot { color: var(--brand); opacity: 1; transition: none; }
+.gf > .gf-flip { animation: gf-flip 0.5s cubic-bezier(0.2, 0, 0, 1) both; }
+@keyframes gf-flip { from { opacity: 0; filter: blur(3px); transform: scale(0.8); } }

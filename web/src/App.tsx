@@ -20,6 +20,7 @@ import { BluetoothWatch, DemoWatch, type WatchInfo, type WatchLink } from "@/lib
 import { EmojiOption, LanguagePicker } from "@/ui/LanguagePicker";
 import { STEP, type Screen } from "@/ui/screens";
 import { WatchPanel } from "@/ui/WatchPanel";
+import { GlyphField } from "@/ui/GlyphField";
 
 type FirmwareOk = Extract<FirmwareCheck, { ok: true }>;
 // The demo file is empty, so there is nothing to build.
@@ -384,10 +385,10 @@ export default function App() {
       <LanguagePicker languages={LANGS} selected={sel} onToggle={(id) => { setRestoreOnly(false); setSel({ ...sel, [id]: !sel[id] }); }} />
       <EmojiOption checked={emoji} onChange={(v) => { setRestoreOnly(false); setEmoji(v); }} />
       <p className="mt-3 flex gap-2 text-[13px] text-muted-foreground"><Info className="mt-0.5 size-3.5 shrink-0" />{t.noKorean}</p>
-      <Actions note={LANGS.some((l) => !l.tested) && <>{t.notTestedNote}{" "}<a className="text-foreground underline underline-offset-3" href={`${REPO}/issues`}>{t.tellUs}</a></>}>
+      <Actions note={LANGS.some((l) => !l.tested) && <>{t.notTestedNote}{" "}<a className="hit text-foreground underline underline-offset-3" href={`${REPO}/issues`}>{t.tellUs}</a></>}>
         <Button disabled={parts.length === 0} onClick={() => { setRestoreOnly(false); if (fwOk) startBuild(fwOk, parts); else setScreen("fwEmpty"); }}>{t.continue}</Button>
       </Actions>
-      <button type="button" className="mt-4 text-[13px] text-muted-foreground underline decoration-input underline-offset-3 hover:text-foreground hover:decoration-current"
+      <button type="button" className="hit mt-4 text-[13px] text-muted-foreground underline decoration-input underline-offset-3 hover:text-foreground hover:decoration-current"
         onClick={() => { setRestoreOnly(true); if (fwOk) startBuild(fwOk, []); else setScreen("fwEmpty"); }}>{t.removeAll}</button>
     </>
   );
@@ -409,11 +410,11 @@ export default function App() {
           <FileUp className="mx-auto size-5.5 text-faint" />
           <p className="mt-2">
             {t.drop}{" "}
-            <button type="button" className="font-medium underline decoration-input underline-offset-3 hover:decoration-current" onClick={pickFile}>{t.chooseFile}</button>
+            <button type="button" className="hit font-medium underline decoration-input underline-offset-3 hover:decoration-current" onClick={pickFile}>{t.chooseFile}</button>
           </p>
           <p className="mt-1 text-[13px] text-muted-foreground">{t.dropHint}</p>
           {DEMO !== null && (
-            <button type="button" className="mt-1 text-[13px] underline underline-offset-3" onClick={() => {
+            <button type="button" className="hit mt-1 text-[13px] underline underline-offset-3" onClick={() => {
               const demo: FirmwareOk = { ok: true, file: new File([], `CMF_JX402_08_ATS3089C_V${expected}_GPS_V6.bin`), version: expected, board: "JX402_08", sizeMb: 45.1 };
               setFw(demo);
               startBuild(demo);
@@ -665,7 +666,7 @@ export default function App() {
     <I18n.Provider value={{ lang: uiLang, t }}>
       <header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur-md backdrop-saturate-150">
         <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between gap-3 px-6 max-sm:px-4">
-          <a className="flex items-center gap-2.5 font-semibold tracking-tight" href="./">
+          <a className="flex items-center gap-2.5 font-semibold tracking-tight whitespace-nowrap" href="./">
             <span className="grid size-6 place-items-center rounded-full bg-foreground"><i className="size-3 rounded-full border-[1.5px] border-background" /></span>
             Watch Languages
             <Badge variant="outline" className="rounded-full font-medium text-muted-foreground max-sm:hidden">{t.unofficial}</Badge>
@@ -677,7 +678,7 @@ export default function App() {
                 <ToggleGroupItem key={l.id} value={l.id} aria-label={l.name} className="px-2.5 text-xs font-semibold">{l.label}</ToggleGroupItem>
               ))}
             </ToggleGroup>
-            <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground max-[379px]:hidden">
               <a href={REPO} aria-label="GitHub"><Code /><span className="max-sm:hidden">GitHub</span></a>
             </Button>
             <Button variant="ghost" size="icon-sm" className="text-muted-foreground" aria-label={dark ? t.themeToLight : t.themeToDark}
@@ -704,9 +705,13 @@ export default function App() {
       )}
 
       <div className="mx-auto max-w-[1120px] border-x max-sm:border-x-0">
-        <section className="px-6 pt-14 pb-10 max-sm:px-4 max-sm:pt-8 max-sm:pb-6">
-          <h1 className="max-w-[18ch] text-[clamp(28px,4vw,40px)] leading-[1.1] font-semibold tracking-[-0.035em]">{t.heroTitle}</h1>
-          <p className="mt-3.5 max-w-[54ch] text-[17px] text-muted-foreground max-sm:text-[15.5px]">{t.heroText(t.heroLangs)}</p>
+        <section className="grid grid-cols-[minmax(0,1fr)_400px] max-lg:grid-cols-1">
+          <div className="px-6 pt-14 pb-10 max-sm:px-4 max-sm:pt-8 max-sm:pb-6">
+            <h1 className="max-w-[18ch] text-[clamp(28px,4vw,40px)] leading-[1.1] font-semibold tracking-[-0.035em]">{t.heroTitle}</h1>
+            <p className="mt-3.5 max-w-[54ch] text-[17px] text-muted-foreground max-sm:text-[15.5px]">{t.heroText(t.heroLangs)}</p>
+          </div>
+          {/* Above the watch column: the same boxes turning into letters as at the bottom. */}
+          <div className="relative max-lg:hidden"><GlyphField variant="patch" /></div>
         </section>
 
         <div className="rule" />
@@ -733,7 +738,7 @@ export default function App() {
                           <span className="ml-auto flex min-w-0 items-baseline gap-3 text-sm text-muted-foreground max-sm:ml-0 max-sm:basis-full">
                             <span className="truncate">{s.summary}</span>
                             {s.edit && !busy && screen !== "done" && (
-                              <button type="button" className="font-medium text-foreground underline decoration-input underline-offset-3 hover:decoration-current"
+                              <button type="button" className="hit font-medium text-foreground underline decoration-input underline-offset-3 hover:decoration-current"
                                 onClick={() => setScreen(s.edit!)}>{t.edit}</button>
                             )}
                           </span>
@@ -757,11 +762,12 @@ export default function App() {
         <footer className="[view-transition-name:footer] flex flex-wrap justify-between gap-x-6 gap-y-4 px-6 pt-6 pb-10 text-[13px] text-muted-foreground max-sm:px-4">
           <p className="max-w-[60ch]">{t.footer}</p>
           <nav className="flex gap-4.5" aria-label="Project links">
-            <a className="hover:text-foreground" href={`${REPO}#readme`}>{t.guide}</a>
-            <a className="hover:text-foreground" href={`${REPO}/blob/main/LICENSE`}>{t.license}</a>
-            <a className="hover:text-foreground" href={REPO}>GitHub</a>
+            <a className="hit hover:text-foreground" href={`${REPO}#readme`}>{t.guide}</a>
+            <a className="hit hover:text-foreground" href={`${REPO}/blob/main/LICENSE`}>{t.license}</a>
+            <a className="hit hover:text-foreground" href={REPO}>GitHub</a>
           </nav>
         </footer>
+        <GlyphField />
       </div>
     </I18n.Provider>
   );

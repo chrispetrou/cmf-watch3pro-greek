@@ -73,7 +73,7 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
         ))}
         {shown.length === 0 && (
           <p className="px-4 py-4.5 text-sm text-muted-foreground">
-            {t.noMatch(query)} <a className="text-foreground underline underline-offset-3" href={REQUEST}>{t.requestIt}</a>
+            {t.noMatch(query)} <a className="hit text-foreground underline underline-offset-3" href={REQUEST}>{t.requestIt}</a>
           </p>
         )}
       </div>
