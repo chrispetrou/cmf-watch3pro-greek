@@ -23,6 +23,10 @@ The image above is rendered from the patched font itself (`tools/render_preview.
 
 Several languages can go into one image, separated by commas in `--lang` (e.g. `--lang greek,georgian`). Korean is removed to make room, which leaves space for many more alphabets. See [Adding a language](#adding-a-language).
 
+## In the browser (work in progress)
+
+`web/` is a browser version for people who'd rather not use a terminal: choose the languages, add the official update file, connect the watch over Web Bluetooth and install. It builds the image with the same Python code as the scripts (run in the browser with Pyodide), so the result is identical byte for byte. It needs Chrome or Edge on a computer, or Chrome on Android, and has been tested on a watch with Greek, Georgian and Armenian. An install takes about 6 minutes plus the restart. It isn't hosted yet; [web/README.md](web/README.md) explains how to run it locally.
+
 ## Requirements
 
 - A CMF Watch 3 Pro (board `JX402_08`) and its charger. Other CMF and Nothing watches run different firmware and aren't supported.
@@ -145,6 +149,7 @@ docs/
   firmware-format.md       AOTA, chunked LZMA, SDFS and LVGL font formats
   ble-protocol.md          pairing, session crypto, firmware upload
   updating.md              re-applying the patch after an official update
+web/                       the browser version (see web/README.md)
 ```
 
 `firmware/`, `cache/`, `venv/` and the pairing key are git-ignored.
