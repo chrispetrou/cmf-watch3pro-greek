@@ -13,6 +13,10 @@ const SHA = {
   "georgian,greek": "e2153c6b9b7c42f78a7fcd1a4e57401a1347884a3a5f736afefddb5487fc8533",
   armenian: "ecf7f25902fc60ddb78943ba9f180a5112fe896870e256f6071beb0c00ada6a8",
   "armenian,georgian,greek": "7a9104e4a62eeefba776fed7addbcc7a29845aa11dfb0e49084aca133f6c8479",
+  // with the emoji option (tools/build_firmware.py --emoji)
+  emoji: "8e328b9505bfdc0bf0694c1efa7113757e87c2b7fcabaa2e4dfd20dcc31fa9b0",
+  "greek,emoji": "e9bf8efba6b13b9af9292d077cdbcb66263f70dd221d68ac57cb51f906ffe9ca",
+  "armenian,georgian,greek,emoji": "99544108611214944ad46a3f34af648879b540895079f447e5c5f928e4f4b833",
 };
 
 describe.skipIf(!have)("in-browser build (Pyodide)", () => {
@@ -32,9 +36,10 @@ describe.skipIf(!have)("in-browser build (Pyodide)", () => {
 
   for (const [langs, sha] of Object.entries(SHA)) {
     it(`matches the CLI for ${langs}`, () => {
-      const list = langs.split(",");
+      const list = langs.split(",").filter((l) => l !== "emoji");
       const docs = Object.fromEntries(list.map((l) => [l, readFileSync(`public/glyphs/${l}.json`, "utf8")]));
-      const res = run(orig, py.toPy(list), py.toPy(docs), () => {});
+      const emoji = langs.split(",").includes("emoji") ? readFileSync("public/emoji.json", "utf8") : null;
+      const res = run(orig, py.toPy(list), py.toPy(docs), () => {}, emoji);
       const [img, ok] = res.toJs() as [Uint8Array, boolean];
       expect(ok).toBe(true);
       expect(createHash("sha256").update(img).digest("hex")).toBe(sha);

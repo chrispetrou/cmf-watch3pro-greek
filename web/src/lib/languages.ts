@@ -30,3 +30,9 @@ export const demoLanguages = (): Language[] => [
   ...LANGUAGES,
   ...PLACEHOLDERS.map(([code, name, en]) => ({ id: en.toLowerCase(), code, name, en, tested: false, sender: "", msg: "", date: "" })),
 ];
+
+/** A preview card for the emoji option, shown on the watch next to the languages' cards. */
+export const EMOJI_PREVIEW: Language = {
+  id: "emoji", code: "en", name: "Emoji", en: "Emoji", tested: true,
+  sender: "Alex", msg: "🎉🔥😍 See you at 8!", date: "Mon 16 Nov",
+};

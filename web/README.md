@@ -6,7 +6,8 @@ connect the watch, install.
 
 What's real so far:
 
-- "Remove the languages": installs the official file unchanged (the same path as the recovery
+- "More emoji": the `--emoji` option (tools/emoji.py), from `public/emoji.json`;
+- "Remove the languages and emoji": installs the official file unchanged (the same path as the recovery
   restore), to undo the patch or get Korean back (tested: Korean works again afterwards);
 - checking the firmware file (same checks as `tools/patch.py`: AOTA header, CRCs, board, version);
 - the download link, from the Nothing Archive list (Nothing's CDN doesn't allow the browser to
@@ -83,6 +84,8 @@ default). The technical log stays in English.
 - `public/glyphs/<lang>.json`: each language's glyphs, rasterised ahead of time so the browser
   doesn't need the fonts or `lv_font_conv`. Regenerate with `npm run glyphs` after changing a
   language or its font.
+- `public/emoji.json`: the emoji option's colour images (30 x 30 RGBA) and symbol glyphs, made by
+  the same `npm run glyphs`.
 - `src/App.tsx`, `src/ui/`, `src/components/blocks.tsx`: the wizard and its building blocks.
 
 ## Plan

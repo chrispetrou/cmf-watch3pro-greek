@@ -3,13 +3,15 @@ import type { BuildResponse } from "./types";
 
 export type BuildResult = { image: Blob; sha256: string; versionOk: boolean };
 
-export async function buildImage(firmware: File, langs: string[], onLog: (m: string) => void, signal?: AbortSignal): Promise<BuildResult> {
+export async function buildImage(firmware: File, langs: string[], emoji: boolean, onLog: (m: string) => void, signal?: AbortSignal): Promise<BuildResult> {
+  const load = async (path: string, what: string) => {
+    const r = await fetch(new URL(path, document.baseURI), { signal });
+    if (!r.ok) throw new Error(`couldn't load ${what} (${r.status})`);
+    return r.text();
+  };
   const glyphs: Record<string, string> = {};
-  for (const lang of langs) {
-    const r = await fetch(new URL(`glyphs/${lang}.json`, document.baseURI), { signal });
-    if (!r.ok) throw new Error(`couldn't load the ${lang} letters (${r.status})`);
-    glyphs[lang] = await r.text();
-  }
+  for (const lang of langs) glyphs[lang] = await load(`glyphs/${lang}.json`, `the ${lang} letters`);
+  const emojiDoc = emoji ? await load("emoji.json", "the emoji") : undefined;
   const data = await firmware.arrayBuffer();
   const worker = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
   try {
@@ -22,7 +24,7 @@ export async function buildImage(firmware: File, langs: string[], onLog: (m: str
         else if (m.type === "error") reject(new Error(m.message));
         else resolve({ image: new Blob([m.image], { type: "application/octet-stream" }), sha256: m.sha256, versionOk: m.versionOk });
       };
-      worker.postMessage({ firmware: data, langs, glyphs, indexURL: new URL("pyodide/", document.baseURI).href }, [data]);
+      worker.postMessage({ firmware: data, langs, glyphs, emoji: emojiDoc, indexURL: new URL("pyodide/", document.baseURI).href }, [data]);
     });
   } finally {
     worker.terminate();
