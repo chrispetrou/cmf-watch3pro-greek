@@ -43,6 +43,9 @@ function storedTheme(): Theme {
   }
 }
 
+// iPhone and iPad (iPadOS reports itself as a Mac with a touch screen).
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
 const systemDark = () => matchMedia("(prefers-color-scheme: dark)").matches;
 
 const cmpVersion = (a: string, b: string) => {
@@ -559,8 +562,8 @@ export default function App() {
   const special =
     screen === "unsupported" ? (
       <>
-        <h2 className="text-lg font-semibold tracking-tight">{t.unsupportedTitle}</h2>
-        <Lede className="mt-2">{t.unsupportedText}</Lede>
+        <h2 className="text-lg font-semibold tracking-tight">{isIOS ? t.iosTitle : t.unsupportedTitle}</h2>
+        <Lede className="mt-2">{isIOS ? t.iosText : t.unsupportedText}</Lede>
         <Actions note={t.sendLink}>
           <Button onClick={copyLink}><Copy />{copied ? t.linkCopied : t.copyLink}</Button>
         </Actions>

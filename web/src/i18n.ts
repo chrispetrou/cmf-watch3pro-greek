@@ -151,7 +151,9 @@ const en = {
 
   // special screens
   unsupportedTitle: "Open this page in Chrome or Edge",
-  unsupportedText: "Talking to the watch needs Web Bluetooth, which this browser doesn’t have. It works in Chrome or Edge on Windows, macOS, ChromeOS and Linux, and in Chrome on Android. It doesn’t work on iPhone or iPad, in Safari or in Firefox.",
+  unsupportedText: "Talking to the watch needs Web Bluetooth, which this browser doesn’t have. It works in Chrome or Edge, and in other browsers built on Chrome such as Dia, Arc or Opera, on Windows, macOS, ChromeOS and Linux, and in Chrome on Android. It doesn’t work in Safari or Firefox. Brave has it switched off by default.",
+  iosTitle: "iPhone and iPad can’t do this",
+  iosText: "On iPhone and iPad every browser, Chrome included, runs on Safari’s engine, and that has no Web Bluetooth. Use a computer with Chrome or Edge, or Chrome on an Android phone.",
   sendLink: "Tip: send the link to your computer.",
   copyLink: "Copy link",
   linkCopied: "Link copied",
@@ -334,7 +336,9 @@ const el: Strings = {
   afterTransferText: "Κοίτα την οθόνη του ρολογιού. Αν δείχνει την ώρα, η εγκατάσταση πέτυχε. Αν δείχνει QR code και ζητά ενημέρωση, σύνδεσέ το ξανά και κάνε επαναφορά του επίσημου firmware.",
 
   unsupportedTitle: "Άνοιξε αυτή τη σελίδα σε Chrome ή Edge",
-  unsupportedText: "Η επικοινωνία με το ρολόι χρειάζεται Web Bluetooth, που αυτός ο browser δεν έχει. Δουλεύει σε Chrome ή Edge σε Windows, macOS, ChromeOS και Linux, και σε Chrome σε Android. Δεν δουλεύει σε iPhone ή iPad, σε Safari ή σε Firefox.",
+  unsupportedText: "Η επικοινωνία με το ρολόι χρειάζεται Web Bluetooth, που αυτός ο browser δεν έχει. Δουλεύει σε Chrome ή Edge, και σε άλλους browsers βασισμένους στο Chrome όπως Dia, Arc ή Opera, σε Windows, macOS, ChromeOS και Linux, και σε Chrome σε Android. Δεν δουλεύει σε Safari ή Firefox. Στο Brave είναι απενεργοποιημένο από προεπιλογή.",
+  iosTitle: "Σε iPhone και iPad δεν γίνεται",
+  iosText: "Σε iPhone και iPad όλοι οι browsers, μαζί και το Chrome, τρέχουν πάνω στη μηχανή του Safari, που δεν έχει Web Bluetooth. Χρησιμοποίησε υπολογιστή με Chrome ή Edge, ή Chrome σε κινητό Android.",
   sendLink: "Συμβουλή: στείλε τον σύνδεσμο στον υπολογιστή σου.",
   copyLink: "Αντιγραφή συνδέσμου",
   linkCopied: "Αντιγράφηκε",

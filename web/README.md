@@ -36,9 +36,11 @@ GitHub Pages only serves the files, including the fonts (bundled, no Google Font
 The only other request is the Nothing Archive's release list on raw.githubusercontent.com, to
 find the latest firmware version.
 
-Needs Chrome or Edge on a computer or Android phone (no Safari, Firefox or iPhone). Only macOS
-with Chrome has been tested; Windows, Linux, ChromeOS and Android should work but are untested
-(Android in particular may differ in how pairing prompts and packet sizes behave). To run it
+Needs Chrome, Edge or another browser built on Chrome, on a computer or an Android phone. Tested
+on macOS with Chrome and Dia; Windows, Linux, ChromeOS and Android should work but are untested
+(Android in particular may differ in how pairing prompts and packet sizes behave). Safari, Firefox
+and every browser on iPhone/iPad (they all use Safari's engine) have no Web Bluetooth; the page
+shows iPhone and iPad users their own explanation. Brave has Web Bluetooth off by default. To run it
 locally you need Node 22.
 
 ```bash
