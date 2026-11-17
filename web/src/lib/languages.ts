@@ -15,7 +15,7 @@ export const LANGUAGES: Language[] = [
     sender: "Μαρία", msg: "Φτάνω σε 10 λεπτά, κράτα μου θέση!", date: "Δευτέρα 16 Νοε" },
   { id: "georgian", code: "ka", name: "ქართული", en: "Georgian", tested: true,
     sender: "ნინო", msg: "ხვალ 10 საათზე შევხვდეთ?", date: "ორშაბათი, 16 ნოემბერი" },
-  { id: "armenian", code: "hy", name: "Հայերեն", en: "Armenian", tested: false,
+  { id: "armenian", code: "hy", name: "Հայերեն", en: "Armenian", tested: true,
     sender: "Արամ", msg: "Շնորհակալություն, երեկոյան կզանգեմ։", date: "Երկուշաբթի, 16 նոյեմբերի" },
 ];
 
