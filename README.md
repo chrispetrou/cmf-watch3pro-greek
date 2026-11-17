@@ -26,7 +26,7 @@ Several languages can go into one image, separated by commas in `--lang` (e.g. `
 > [!IMPORTANT]
 > **A patched watch can't show Korean.** The font partition has a fixed size, so every build removes the Korean (Hangul) syllables to make room for the new letters. Korean text shows up as empty boxes afterwards. Don't patch a watch you use to read Korean. `--keep-hangul` keeps them, but the build will almost certainly stop because the fonts no longer fit. To get Korean back, put the official firmware back: "Remove the languages" in the [web app](https://watchlanguages.app), or `tools/cmf_flash.py` with the official image.
 
-## In the browser (work in progress)
+## In the browser
 
 **Use it at [watchlanguages.app](https://watchlanguages.app).**
 

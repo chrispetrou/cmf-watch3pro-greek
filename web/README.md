@@ -1,4 +1,4 @@
-# Web app (work in progress)
+# Web app
 
 A browser version of the tools, so people can add a language to their watch without a terminal.
 It follows the wizard in the design handoff: choose languages, add the official firmware file,
@@ -32,7 +32,7 @@ What's real so far:
 where the page can't reconnect after the install).
 
 It's hosted at https://watchlanguages.app (GitHub Pages with a custom domain; watchlanguages.com and
-the old github.io address redirect there), deployed from `web/ble-spike` by
+the old github.io address redirect there), deployed from `main` by
 `.github/workflows/pages.yml` (build, tests, GitHub Pages). Everything runs in the visitor's browser:
 GitHub Pages only serves the files, including the fonts (bundled, no Google Fonts) and Pyodide.
 The only other request is the Nothing Archive's release list on raw.githubusercontent.com, to

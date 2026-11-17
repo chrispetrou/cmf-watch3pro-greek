@@ -4,7 +4,7 @@ name: Deploy web app to GitHub Pages
 
 on:
   push:
-    branches: [web/ble-spike]
+    branches: [main]
     paths: ["web/**", "tools/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
