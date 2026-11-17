@@ -2,8 +2,7 @@
 import { type DragEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
-  BatteryCharging, Bluetooth, Check, Clock, Code, Copy, Download, FileDown, FileUp, Info, Monitor, Moon, RotateCw, Sun, TriangleAlert,
-  Watch as WatchIcon, X,
+  Bluetooth, Check, Code, Copy, Download, FileUp, Info, Moon, RotateCw, Sun, TriangleAlert, Watch as WatchIcon, X,
 } from "lucide-react";
 import { Actions, Details, FileRow, Notice, Spinner } from "@/components/blocks";
 import { Badge } from "@/components/ui/badge";
@@ -708,14 +707,6 @@ export default function App() {
         <section className="px-6 pt-14 pb-10 max-sm:px-4 max-sm:pt-8 max-sm:pb-6">
           <h1 className="max-w-[18ch] text-[clamp(28px,4vw,40px)] leading-[1.1] font-semibold tracking-[-0.035em]">{t.heroTitle}</h1>
           <p className="mt-3.5 max-w-[54ch] text-[17px] text-muted-foreground max-sm:text-[15.5px]">{t.heroText(t.heroLangs)}</p>
-          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-muted-foreground">
-            <span className="font-medium text-foreground">{t.needTitle}</span>
-            <ul className="contents">
-              {[Monitor, FileDown, BatteryCharging, Clock].map((Icon, i) => (
-                <li key={i} className="inline-flex items-center gap-1.5"><Icon className="size-3.5 text-faint" aria-hidden="true" />{t.need[i]}</li>
-              ))}
-            </ul>
-          </div>
         </section>
 
         <div className="rule" />
