@@ -1,6 +1,6 @@
 # CMF Watch 3 Pro language patches
 
-The CMF Watch 3 Pro can only display the scripts in its built-in font: Latin, Cyrillic, Chinese, Japanese and Korean. Notifications in any other script, like Greek, Georgian or Armenian, show up as empty boxes.
+The CMF Watch 3 Pro can only display the characters in its built-in font. That font covers Latin (including Vietnamese), Cyrillic, Chinese, Japanese and Korean, and also has the letters of Hebrew, Arabic, Thai and Devanagari (whether those display correctly, right to left or with joined letters, hasn't been checked). Notifications in scripts it doesn't have, like Greek, Georgian or Armenian, show up as empty boxes.
 
 This repo adds the missing letters to the official firmware's font and flashes it to the watch over Bluetooth from a computer, without going through the Nothing X app. It started as a Greek fix, which I've been running on my own watch (firmware 1.0.1.77), and now takes a list of languages.
 
@@ -21,7 +21,10 @@ The image above is rendered from the patched font itself (`tools/render_preview.
 | Georgian | `georgian` | [Noto Sans Georgian](https://github.com/notofonts/georgian) v2.005 Medium | Close, not identical ([preview](docs/previews/georgian.png)) | Yes (1.0.1.77) |
 | Armenian | `armenian` | [Noto Sans Armenian](https://github.com/notofonts/armenian) v2.008 Medium | Close, not identical ([preview](docs/previews/armenian.png)) | Yes (1.0.1.77) |
 
-Several languages can go into one image, separated by commas in `--lang` (e.g. `--lang greek,georgian`). Korean is removed to make room, which leaves space for many more alphabets. See [Adding a language](#adding-a-language).
+Several languages can go into one image, separated by commas in `--lang` (e.g. `--lang greek,georgian`). See [Adding a language](#adding-a-language).
+
+> [!IMPORTANT]
+> **A patched watch can't show Korean.** The font partition has a fixed size, so every build removes the Korean (Hangul) syllables to make room for the new letters. Korean text shows up as empty boxes afterwards. Don't patch a watch you use to read Korean. `--keep-hangul` keeps them, but the build will almost certainly stop because the fonts no longer fit. Installing the official update again brings Korean back.
 
 ## In the browser (work in progress)
 
@@ -71,7 +74,7 @@ Bluetooth headphones connected to the computer (AirPods, for example) may stutte
 ## How it works
 
 1. The official update is a single file (Actions "AOTA" format) with a few compressed parts: the main app, image resources and one font partition.
-2. The font partition holds `sans36.font`, an LVGL bitmap font. It covers Latin, Cyrillic, CJK and Hangul, and nothing else.
+2. The font partition holds `sans36.font`, an LVGL bitmap font, and `emoji28.font` with 53 colour emoji. `sans36.font` covers Latin, Cyrillic, CJK and Hangul, plus Hebrew, Arabic, Thai and Devanagari letters, but no Greek, Georgian or Armenian.
 3. The stock glyphs turned out to be Inter v4.0 Medium at 36 px. Re-rendering the Latin letters with it gives identical bytes. Each language's letters are rendered with the same settings, from Inter when it has them (Greek) or from a similar font when it doesn't (Georgian and Armenian come from Noto Sans Georgian and Noto Sans Armenian), and appended to `sans36.font`.
 4. The font partition has a fixed size, so the Hangul syllables are dropped to make room. Everything else stays byte for byte the same.
 5. The font is repacked and every checksum in the image is recomputed. See [docs/firmware-format.md](docs/firmware-format.md#checksums-how-they-were-worked-out) for how the checksum rules were worked out.
