@@ -67,12 +67,15 @@ def render_glyphs(ttf, cps, lv_font_conv):
     return glyphs
 
 
-def build_image(firmware, langs, out, lv_font_conv="lv_font_conv", fonts_dir=DEFAULT_FONTS_DIR,
-                keep_hangul=False):
-    """Build the patched image. Returns True if the font version matches the app's ver_chk table."""
-    orig = open(firmware, "rb").read()
+def patch(orig, glyph_sets, keep_hangul=False, log=print):
+    """Add glyphs to an official image, all in memory. Also used by the web app (via Pyodide).
+
+    orig       : bytes of the official AOTA image
+    glyph_sets : {lang: [(cp, adv, x, y, w, h, px)]}, rasterised like the stock font
+    Returns (patched image bytes, version_ok).
+    """
     if orig[:4] != b"AOTA":
-        raise SystemExit(f"{firmware}: not an AOTA firmware image")
+        raise SystemExit("not an AOTA firmware image")
     hdr, files = parse_aota(orig)
     F = dict(files)
     # Safety: the app must expect the font version that ota.xml declares (boot-time ver_chk).
@@ -83,24 +86,22 @@ def build_image(firmware, langs, out, lv_font_conv="lv_font_conv", fonts_dir=DEF
     app = unlzma(F["TEMP.bin"])
     version_ok = struct.pack("<II", fid, fver) in app
     if version_ok:
-        print(f"font partition: file_id {fid}, version {fver} (matches the app's expected-version table)")
+        log(f"font partition: file_id {fid}, version {fver} (matches the app's expected-version table)")
     else:
-        print(f"WARNING: app has no {{file_id {fid}, version {fver}}} entry; check the ver_chk table "
-              f"before flashing (see docs/firmware-format.md)")
+        log(f"WARNING: app has no {{file_id {fid}, version {fver}}} entry; check the ver_chk table "
+            f"before flashing (see docs/firmware-format.md)")
 
     raw = unlzma(F["fonts.bin"])
     ents = {n: (o, s) for n, o, s, _ in entries(raw)[1:]}
     o, s = ents["sans36.font"]
     sans = LvFont(raw[o:o + s])
-    print(f"stock sans36.font: {s:,} bytes, {sans.nglyphs} glyphs")
+    log(f"stock sans36.font: {s:,} bytes, {sans.nglyphs} glyphs")
     o, s = ents["emoji28.font"]
     emoji = raw[o:o + s]
 
     add, counts = [], []
-    for lang in langs:
-        cps = [c for c in codepoints(lang) if not sans.gid(c)]
-        ttf = fetch_font(LANGUAGES[lang]["font"], fonts_dir)
-        glyphs = render_glyphs(ttf, cps, lv_font_conv)
+    for lang, glyphs in glyph_sets.items():
+        glyphs = [g for g in glyphs if not sans.gid(g[0])]
         add += glyphs
         counts.append(f"+{len(glyphs)} {lang}")
     add.sort(key=lambda g: g[0])
@@ -109,16 +110,26 @@ def build_image(firmware, langs, out, lv_font_conv="lv_font_conv", fonts_dir=DEF
     new_sans = build(sans, drop=drop, add=add)
     nf = LvFont(new_sans)
     assert all(nf.gid(g[0]) for g in add), "glyph missing after rebuild"
-    print(f"new sans36.font:   {len(new_sans):,} bytes, {nf.nglyphs} glyphs ({', '.join(counts)})")
+    log(f"new sans36.font:   {len(new_sans):,} bytes, {nf.nglyphs} glyphs ({', '.join(counts)})")
 
     sd = build_sdfs([("sans36.font", new_sans), ("emoji28.font", emoji)])
     if len(sd) > len(raw):
         raise SystemExit(f"font image grew ({len(sd):#x} > {len(raw):#x}); the font partition may not fit it")
+    log(f"font partition: {len(sd):,} of {len(raw):,} bytes used, {len(raw) - len(sd):,} left")
     lz = lzma_chunks(sd)
     xml2 = set_xml_partition(xml0, "font", file_size=hex(len(lz)), orig_size=hex(len(sd)),
                              checksum="0x%08x" % (zlib.crc32(sd) & 0xffffffff))   # version untouched!
     files2 = [(n, lz if n == "fonts.bin" else xml2.encode() if n == "ota.xml" else b) for n, b in files]
-    img = build_aota(hdr, files2)
+    return build_aota(hdr, files2), version_ok
+
+
+def build_image(firmware, langs, out, lv_font_conv="lv_font_conv", fonts_dir=DEFAULT_FONTS_DIR,
+                keep_hangul=False):
+    """Build the patched image. Returns True if the font version matches the app's ver_chk table."""
+    orig = open(firmware, "rb").read()
+    glyph_sets = {lang: render_glyphs(fetch_font(LANGUAGES[lang]["font"], fonts_dir), codepoints(lang), lv_font_conv)
+                  for lang in langs}
+    img, version_ok = patch(orig, glyph_sets, keep_hangul)
     open(out, "wb").write(img)
     print(f"wrote {out}: {len(img):,} bytes  sha256 {hashlib.sha256(img).hexdigest()}")
     return version_ok

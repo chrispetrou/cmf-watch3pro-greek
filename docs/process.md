@@ -104,3 +104,14 @@ Armenian was the next alphabet that is written left to right, needs no letter jo
 The 96 glyphs cover the Armenian block (capital and small letters, punctuation such as ։ ՝ ՞, the ligature և and the dram sign ֏) and the five Armenian ligatures at U+FB13 to U+FB17. They add about 8 KB. The font partition version stays 29, and with Greek, Georgian and Armenian together the build gives the same image whatever order the languages are listed in.
 
 The Greek, Georgian and Armenian image was flashed to a watch on 1.0.1.77 and Armenian notifications show correctly, including the punctuation and the dram sign.
+
+## 11. In the browser
+
+Running Python tools from a terminal is too much for most people, so the same steps were moved into a web page, [watchlanguages.app](https://watchlanguages.app).
+
+- **Building.** The page runs the unchanged `tools/*.py` in Pyodide (Python compiled to WebAssembly) inside a Web Worker. The glyphs are rasterised ahead of time by `tools/export_glyphs.py`, since lv_font_conv needs Node and the fonts. The browser builds byte for byte the same image as the command line (same sha256 for every language set), in a few seconds. The firmware file never leaves the computer.
+- **Flashing.** Web Bluetooth gives the same GATT access as the Python client, so `web/src/ble` is a port of `tools/cmf_client.py`. The first version confirmed every packet and ran at about 2 KB/s. Sending without confirmations, with a fallback when the watch goes quiet, brought it to 16.5 KB/s (see [ble-protocol.md](ble-protocol.md#write-mode-and-speed)).
+- **Restart.** Chrome on macOS cannot reconnect to the watch after it restarts without asking the user again, so the install counts as done once the watch acknowledges the upload, and checking the new version is a separate button.
+- **Platforms.** Web Bluetooth exists only in Chromium browsers. It was tested in Chrome and Dia on macOS. On iPhone every browser is built on WebKit, which has no Web Bluetooth, so the page cannot work there.
+
+Greek, Georgian and Armenian were all flashed from the page to a watch on 1.0.1.77.

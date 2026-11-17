@@ -13,3 +13,9 @@ __pycache__/
 cache/
 tools/watch_address.txt
 *.UNSAFE
+# web app
+web/node_modules/
+web/dist/
+web/public/pyodide/
+web/.vite/
+!web/src/build/

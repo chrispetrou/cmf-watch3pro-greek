@@ -1,0 +1,43 @@
+{
+  "name": "cmf-watch3pro-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/copy-pyodide.mjs",
+    "dev": "vite",
+    "prebuild": "node scripts/copy-pyodide.mjs",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "vectors": "../venv/bin/python test/make_vectors.py > test/vectors.json",
+    "glyphs": "../venv/bin/python ../tools/export_glyphs.py"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/noto-sans-armenian": "^5.3.0",
+    "@fontsource-variable/noto-sans-georgian": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.66.0",
+    "pyodide": "^314.0.7",
+    "radix-ui": "^1.8.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/web-bluetooth": "^0.0.22",
+    "@vitejs/plugin-react": "^5.2.0",
+    "tailwindcss": "^4.3.5",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.8",
+    "vitest": "^4.1.12"
+  }
+}

@@ -24,7 +24,15 @@ The image above is rendered from the patched font itself (`tools/render_preview.
 Several languages can go into one image, separated by commas in `--lang` (e.g. `--lang greek,georgian`). See [Adding a language](#adding-a-language).
 
 > [!IMPORTANT]
-> **A patched watch can't show Korean.** The font partition has a fixed size, so every build removes the Korean (Hangul) syllables to make room for the new letters. Korean text shows up as empty boxes afterwards. Don't patch a watch you use to read Korean. `--keep-hangul` keeps them, but the build will almost certainly stop because the fonts no longer fit. Installing the official update again brings Korean back.
+> **A patched watch can't show Korean.** The font partition has a fixed size, so every build removes the Korean (Hangul) syllables to make room for the new letters. Korean text shows up as empty boxes afterwards. Don't patch a watch you use to read Korean. `--keep-hangul` keeps them, but the build will almost certainly stop because the fonts no longer fit. To get Korean back, put the official firmware back: "Remove the languages" in the [web app](https://watchlanguages.app), or `tools/cmf_flash.py` with the official image.
+
+## In the browser
+
+**Use it at [watchlanguages.app](https://watchlanguages.app).**
+
+`web/` is a browser version for people who'd rather not use a terminal: choose the languages, add the official update file, connect the watch over Web Bluetooth and install. It builds the image with the same Python code as the scripts (run in the browser with Pyodide), so the result is identical byte for byte. It needs Chrome or Edge on a computer, or Chrome on Android, and has been tested on a watch with Greek, Georgian and Armenian. An install takes about 6 minutes plus the restart.
+
+So far it has been tested on macOS with Chrome and with Dia; other browsers built on Chrome (Edge, Arc, Opera) should work the same. Windows, Linux, ChromeOS and Android support Web Bluetooth too, so it should work there, but nobody has tried it yet. It can't work on iPhone or iPad, in any browser: they all run on Safari's engine, which has no Web Bluetooth. If you do, please [open an issue](https://github.com/chrispetrou/cmf-watch3pro-languages/issues) and say how it went. [web/README.md](web/README.md) explains how to run it locally.
 
 ## Requirements
 
@@ -131,6 +139,7 @@ tools/
   build_firmware.py        official image -> patched image (reproducible)
   languages.py             the languages and the fonts their glyphs come from
   render_preview.py        render text with the watch font to a PNG (needs Pillow)
+  export_glyphs.py         export each language's glyphs for the web app (web/public/glyphs/)
   cmf_scan.py              find the watch's BLE address
   cmf_test.py              pair and read the firmware version (read-only)
   cmf_flash.py             upload an image over BLE
@@ -147,6 +156,7 @@ docs/
   firmware-format.md       AOTA, chunked LZMA, SDFS and LVGL font formats
   ble-protocol.md          pairing, session crypto, firmware upload
   updating.md              re-applying the patch after an official update
+web/                       the browser version (see web/README.md)
 ```
 
 `firmware/`, `cache/`, `venv/` and the pairing key are git-ignored.

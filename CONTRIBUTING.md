@@ -55,7 +55,10 @@ The watch's own typeface is Inter v4.0 Medium at 36 px.
    ```
 
    `render_preview.py` needs Pillow (`./venv/bin/pip install pillow`). It prints "not in font" for any sample character that's missing.
-3. Update the docs:
+3. Add it to the web app:
+   - run `./venv/bin/python tools/export_glyphs.py`, which writes `web/public/glyphs/<lang>.json`;
+   - add an entry to `web/src/lib/languages.ts` with the native name and a short sample message.
+4. Update the docs:
    - a row in the Languages table in `README.md`;
    - mention the language where the README lists examples, if it helps;
    - a short section at the end of `docs/process.md`: why this font, how many glyphs, anything unusual;
