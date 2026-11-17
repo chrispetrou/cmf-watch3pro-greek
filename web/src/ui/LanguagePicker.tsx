@@ -55,7 +55,8 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
           <label key={l.id} htmlFor={`${id}-${l.id}`}
             className="flex cursor-pointer items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted max-sm:px-3.5 max-sm:py-3">
             <span className="text-[17px] font-semibold tracking-tight" lang={l.code}>{l.name}</span>
-            <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{lang === "el" ? l.el ?? l.en : l.en}</span>
+            {/* The name in the page's language, unless it's the same as the native one (Ελληνικά on the Greek page). */}
+            <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{(lang === "el" ? l.el ?? l.en : l.en) === l.name ? "" : lang === "el" ? l.el ?? l.en : l.en}</span>
             <span className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground" title={l.tested ? t.testedLong : t.notTestedLong}>
               <i className={cn("size-1.5 rounded-full", l.tested ? "bg-ok" : "bg-faint")} />
               <span className="max-sm:sr-only">{l.tested ? t.tested : t.notTested}</span>
