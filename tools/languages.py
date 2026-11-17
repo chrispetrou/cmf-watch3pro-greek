@@ -28,6 +28,14 @@ FONTS = {
         "file": "NotoSansGeorgian-Medium.ttf",
         "sha256": "4ab94cd342f4db4b8a722d3e52f06ab59a378b15c6a604e4af22e26dba2246fd",
     },
+    "noto-armenian": {
+        "name": "Noto Sans Armenian v2.008 Medium",
+        "url": "https://github.com/notofonts/armenian/releases/download/"
+               "NotoSansArmenian-v2.008/NotoSansArmenian-v2.008.zip",
+        "member": "unhinted/ttf/NotoSansArmenian-Medium.ttf",
+        "file": "NotoSansArmenian-Medium.ttf",
+        "sha256": "315114c2b6737f0f0aab3e6abb70febb7e1c77d065f3602e61ec74e9e07f20aa",
+    },
 }
 
 LANGUAGES = {
@@ -57,6 +65,21 @@ LANGUAGES = {
             "გამარჯობა, საქართველო!",
             "Hello გამარჯობა 123",
             "ᲡᲐᲥᲐᲠᲗᲕᲔᲚᲝ",
+        ],
+    },
+    # Inter has no Armenian. Noto Sans Armenian Medium is as close to it as the
+    # Georgian one (x-height and cap height 0.536/0.714 em vs Inter's 0.546/0.728).
+    "armenian": {
+        "name": "Armenian",
+        "font": "noto-armenian",
+        "ranges": [(0x0530, 0x058F), (0xFB13, 0xFB17)],   # Armenian block, ligatures ﬓ-ﬗ
+        "sample": [
+            "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃ",
+            "ՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖ",
+            "աբգդեզէըթժիլխծկհձղճ",
+            "մյնշոչպջռսվտրցւփքօֆ",
+            "Բարև, Հայաստան։ Ինչպե՞ս ես։",
+            "Hello Բարև 123 ֏",
         ],
     },
 }
