@@ -24,7 +24,17 @@ The image above is rendered from the patched font itself (`tools/render_preview.
 Several languages can go into one image, separated by commas in `--lang` (e.g. `--lang greek,georgian`). See [Adding a language](#adding-a-language).
 
 > [!IMPORTANT]
-> **A patched watch can't show Korean.** The font partition has a fixed size, so every build removes the Korean (Hangul) syllables to make room for the new letters. Korean text shows up as empty boxes afterwards. Don't patch a watch you use to read Korean. `--keep-hangul` keeps them, but the build will almost certainly stop because the fonts no longer fit. To get Korean back, put the official firmware back: "Remove the languages" in the [web app](https://watchlanguages.app), or `tools/cmf_flash.py` with the official image.
+> **A patched watch can't show Korean.** The font partition has a fixed size, so every build removes the Korean (Hangul) syllables to make room for the new letters. Korean text shows up as empty boxes afterwards. Don't patch a watch you use to read Korean. `--keep-hangul` keeps them, but the build will almost certainly stop because the fonts no longer fit. To get Korean back, put the official firmware back: "Remove the languages and emoji" in the [web app](https://watchlanguages.app), or `tools/cmf_flash.py` with the official image.
+
+## Emoji
+
+The watch only has 53 colour emoji. Any other emoji shows up as a box. `--emoji` (or "More emoji" in the web app) adds:
+
+- **about 450 colour emoji**, the most used ones that are missing ([`tools/emoji.txt`](tools/emoji.txt), ranked by Unicode's [emoji frequency](https://home.unicode.org/emoji/emoji-frequency/) data), from [Twemoji](https://github.com/jdecked/twemoji) like the stock ones;
+- **emoji below U+1F300 as white symbols**: ❤ ✅ ✔ ☀ ⭐ ✨ ☕ ⚽ ✌ and about 150 more. The watch draws these with its text font, which has no colour, so they come from the monochrome [Noto Emoji](https://github.com/googlefonts/noto-emoji);
+- **fixes for common sequences**: the invisible character phones put after ❤️ and similar no longer shows as a box, skin tones are dropped (👍🏽 shows as 👍), and flags show as their letters (🇬🇷 shows as GR).
+
+Emoji made of several characters, like 👨‍👩‍👧, show as their separate parts. The emoji take about 1.2 MB of the font partition; with Greek, Georgian and Armenian as well, about 250 KB is left. How the emoji font works is in [docs/firmware-format.md](docs/firmware-format.md#emoji-font-emoji28font).
 
 ## In the browser
 
@@ -59,7 +69,7 @@ python3 -m venv venv
 ./venv/bin/python tools/patch.py --lang greek         # download, build, confirm, flash, verify
 ```
 
-Use `--lang georgian` for Georgian, `--lang armenian` for Armenian, or a list like `--lang greek,georgian`.
+Use `--lang georgian` for Georgian, `--lang armenian` for Armenian, or a list like `--lang greek,georgian`. Add `--emoji` for the extra emoji, with or without `--lang`.
 
 `patch.py` looks up the latest Watch 3 Pro release in the [Nothing Archive](https://github.com/spike0en/nothing_archive) update list (model `D399`) and downloads it from Nothing's CDN. It fetches the fonts and `lv_font_conv` into `cache/`, builds the patched image and stops if the font version check fails. If everything looks right it asks before flashing. After the upload it reconnects to make sure the watch didn't end up in upgrade mode.
 
@@ -138,8 +148,10 @@ tools/
   patch.py                 fetch latest release, build, flash, verify
   build_firmware.py        official image -> patched image (reproducible)
   languages.py             the languages and the fonts their glyphs come from
+  emoji.py, emoji.txt      the --emoji option: sources and the list of colour emoji
+  emojifont.py             reader/writer for the watch's colour emoji font
   render_preview.py        render text with the watch font to a PNG (needs Pillow)
-  export_glyphs.py         export each language's glyphs for the web app (web/public/glyphs/)
+  export_glyphs.py         export the glyphs and emoji for the web app (web/public/)
   cmf_scan.py              find the watch's BLE address
   cmf_test.py              pair and read the firmware version (read-only)
   cmf_flash.py             upload an image over BLE
@@ -167,4 +179,6 @@ AGPL-3.0, see [LICENSE](LICENSE).
 
 - The BLE protocol code (`cmf_ble.py`, `cmf_client.py`) is ported from [Gadgetbridge](https://codeberg.org/Freeyourgadget/Gadgetbridge)'s `cmfwatchpro` support, which is AGPL-3.0. That's why the whole repo uses the same license.
 - Glyphs are rendered from [Inter](https://rsms.me/inter/) by Rasmus Andersson (SIL Open Font License 1.1) and, for scripts Inter doesn't cover, the fonts listed in the Languages table (Noto fonts are also under the SIL Open Font License 1.1). No fonts are included, the scripts download them.
+- Colour emoji are from [Twemoji](https://github.com/jdecked/twemoji), copyright 2014–2021 Twitter and 2022 onwards Jason Sofonia and Justine De Caires, graphics licensed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/). They are scaled down to 30 x 30 for the watch. The emoji symbols are rendered from [Noto Emoji](https://github.com/googlefonts/noto-emoji) (SIL Open Font License 1.1).
+- `web/public/glyphs/` and `web/public/emoji.json` hold glyphs and emoji images rendered from these fonts and images, under the same licenses, so the web app doesn't need the fonts.
 - Please don't open issues or PRs with firmware images or patched `.bin` files. Contributions are welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).

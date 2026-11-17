@@ -62,7 +62,7 @@ A flat filesystem image:
 The format is the standard output of `lv_font_conv --format bin`: a chain of `[u32 len][4cc tag][payload]` chunks:
 
 - **head**: version, size 36, ascent/descent, default advance, `bpp=2`, `compression=1` (RLE with prefilter), loca/glyph-id formats.
-- **cmap**: subtables of type 0 (format0 full), 2 (sparse tiny), 3 (format0 tiny) or 1. Each subtable has a range start, a length, a glyph-id start and a data offset.
+- **cmap**: subtables of type 0 (format0 full), 1 (sparse full), 2 (format0 tiny, a contiguous run) or 3 (sparse tiny). Each subtable has a range start, a length, a glyph-id start and a data offset. The stock font only uses types 0, 2 and 3, and the watch didn't find glyphs put in a type 1 subtable. The lookup also stops at the first subtable whose range holds the codepoint, so a new codepoint inside an existing sparse range is handled by splitting that subtable around it (`fontbuild._split_around`).
 - **loca**: glyph offsets into glyf.
 - **glyf**: bit-packed `adv_w`, `box x/y/w/h`, then the bitmap. The bitmap is prefiltered (XOR with the previous row) and RLE-compressed exactly as `lv_font_conv`'s compressor does (see `lvfont.encode_glyph`). One subtlety: `lv_font_conv` writes the final terminator bit even at the end of the stream, and `lvfont.encode_glyph` mirrors that so it reproduces stock bytes exactly.
 - **kern**: pair table, kept for the glyphs that remain.
@@ -70,6 +70,24 @@ The format is the standard output of `lv_font_conv --format bin`: a chain of `[u
 Advance widths are stored in 1/16 px: `round(hmtx_advance * 36 * 16 / unitsPerEm)`.
 
 New glyphs can come from any TrueType font. Each one is rasterised from its own font with the same `lv_font_conv` settings, its advance width is computed from that font's `hmtx`, and all added glyphs are appended in codepoint order. The bitmap font only stores pixels, so glyphs from different fonts sit side by side without problems. They only look different if the fonts' shapes and proportions differ.
+
+## Emoji font (`emoji28.font`)
+
+Colour emoji, 30 x 30 each (the stock file has 53, all Twemoji). All values little-endian:
+
+```
+header   u32 0, u32 count, 8 zero bytes
+index    count x 16 bytes, sorted by codepoint:
+         u32 codepoint, u16 width, u16 height, u32 offset (from the start of the file), u16 advance, u16 7
+pixels   width x height x 3 bytes per emoji; each pixel is the 24-bit value
+         alpha << 18 | red << 12 | green << 6 | blue (6 bits per channel)
+```
+
+The stock advance is 33 (30 px plus spacing); 0 makes an entry take no space, which is how the skin tone modifiers are hidden. The last u16 is 7 in every stock entry and its meaning is unknown. The count comes from the header, so entries can be added: a test image with 10 extra emoji showed them all.
+
+The pixel format was worked out by fitting the stored bits against the Twemoji PNGs: a least-squares fit put 6 bits of blue in bits 0-5 and 6 bits of green in bits 6-11, which left red in 12-17 and alpha in 18-23. Read as RGB565 plus an alpha byte, the shapes are right but the colours are wrong.
+
+Which font draws a character depends on the codepoint: high codepoints go to `emoji28.font`, lower ones to `sans36.font`. So ❤ (U+2764), ✅ (U+2705) and the flag letters (U+1F1E6 to U+1F1FF) can only be added to the text font, which is 2 bpp and has no colour. In the tests U+1F1E6 to U+1F1FF went to the text font and U+1F389 and up to the emoji font. The tools assume the split is at U+1F300, the start of the Miscellaneous Symbols and Pictographs block, and a test with 🌈 (U+1F308) and 🌹 (U+1F339) confirms it [to be checked]. The code in the app that makes this choice hasn't been found.
 
 ## Checksums: how they were worked out
 

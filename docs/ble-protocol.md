@@ -80,6 +80,6 @@ The watch verifies the image, installs it and restarts, which takes about a minu
 
 ### Restoring the official firmware
 
-Sending the official image unchanged through the same upload puts the stock font back (and Korean with it). The web app offers this as "Remove the languages", and it is also the way out of upgrade mode (`0.x` version).
+Sending the official image unchanged through the same upload puts the stock font back (and Korean with it). The web app offers this as "Remove the languages and emoji", and it is also the way out of upgrade mode (`0.x` version).
 
 Tested on a watch on 1.0.1.77: after the restore, Greek showed as empty boxes again and Korean displayed correctly.
