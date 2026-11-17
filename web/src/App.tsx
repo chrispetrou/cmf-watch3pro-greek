@@ -1,5 +1,6 @@
 // Watch Languages: choose languages, add the official firmware, connect, install.
 import { type DragEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   Bluetooth, Check, Code, Copy, Download, FileUp, Info, Moon, RotateCw, Sun, TriangleAlert, Watch as WatchIcon, X,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { BluetoothWatch, DemoWatch, type WatchInfo, type WatchLink } from "@/lib
 import { EmojiOption, LanguagePicker } from "@/ui/LanguagePicker";
 import { STEP, type Screen } from "@/ui/screens";
 import { WatchPanel } from "@/ui/WatchPanel";
+import { GlyphField } from "@/ui/GlyphField";
 
 type FirmwareOk = Extract<FirmwareCheck, { ok: true }>;
 // The demo file is empty, so there is nothing to build.
@@ -47,6 +49,20 @@ function storedTheme(): Theme {
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 const systemDark = () => matchMedia("(prefers-color-scheme: dark)").matches;
+const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Chromium has view transitions, and Web Bluetooth only runs there anyway; elsewhere screens just swap.
+const canTransition = "startViewTransition" in document;
+
+const SHORT_TITLE = "Watch Languages";
+
+/** Focus the current step's heading, and scroll it into view when it isn't comfortably visible. */
+function revealStep() {
+  const h = document.querySelector<HTMLElement>('[aria-current="step"] h2');
+  if (!h) return;
+  h.focus({ preventScroll: true });
+  const top = h.getBoundingClientRect().top;
+  if (top < 72 || top > innerHeight * 0.6) h.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+}
 
 const cmpVersion = (a: string, b: string) => {
   const x = a.split(".").map(Number), y = b.split(".").map(Number);
@@ -71,7 +87,24 @@ export default function App() {
   const supported = DEMO !== null ? DEMO !== "unsupported" : webBluetoothAvailable();
   const [uiLang, setUiLang] = useState<UiLang>(storedUiLang);
   const t = STRINGS[uiLang];
-  const [screen, setScreen] = useState<Screen>(supported ? "choose" : "unsupported");
+  const [screen, setScreenNow] = useState<Screen>(supported ? "choose" : "unsupported");
+  const screenRef = useRef(screen);
+  const transition = useRef<ViewTransition | null>(null);
+  // Every screen change goes through a view transition: the steps glide to their new heights and
+  // the watch face crossfades, instead of the page jumping.
+  function setScreen(s: Screen) {
+    if (s === screenRef.current || !canTransition || reducedMotion() || document.hidden) {
+      screenRef.current = s;
+      setScreenNow(s);
+      return;
+    }
+    screenRef.current = s;
+    const vt = document.startViewTransition(() => flushSync(() => setScreenNow(s)));
+    transition.current = vt;
+    // A newer screen change skips this one; that's expected, not an error.
+    vt.ready.catch(() => {});
+    vt.finished.finally(() => { if (transition.current === vt) transition.current = null; });
+  }
   const [theme, setTheme] = useState<Theme>(storedTheme);
   const [sysDark, setSysDark] = useState(systemDark);
   const [sel, setSel] = useState<Record<string, boolean>>({ greek: true });
@@ -81,7 +114,8 @@ export default function App() {
   const [release, setRelease] = useState<Release | null>(null);
   const [fw, setFw] = useState<FirmwareCheck | null>(null);
   const [checkPct, setCheckPct] = useState(0);
-  const [dragOver, setDragOver] = useState(false);
+  // A file dragged over the page during the firmware step: the whole page becomes the drop target.
+  const [pageDrag, setPageDrag] = useState(false);
   const [checks, setChecks] = useState([false, false, false]);
   const [showAll, setShowAll] = useState(false);
   const [watch, setWatch] = useState<WatchInfo | null>(null);
@@ -148,6 +182,24 @@ export default function App() {
   const addLog = (m: string) =>
     setLog((l) => [...l, `[${new Date().toLocaleTimeString([], { hour12: false })}] ${m}`]);
 
+  // A new step: move focus to it and bring it into view (on phones the watch sits above the steps),
+  // once any view transition has finished so the scroll doesn't fight the animation.
+  const firstStep = useRef(true);
+  useEffect(() => {
+    if (firstStep.current) { firstStep.current = false; return; }
+    const vt = transition.current;
+    if (vt) vt.finished.then(revealStep); else revealStep();
+  }, [cur]);
+
+  // The install takes up to half an hour, so show how far it is in the tab title too.
+  const baseTitle = useRef(document.title);
+  useEffect(() => {
+    document.title = screen === "transfer" ? `${pct}% · ${SHORT_TITLE}`
+      : screen === "installing" ? `${t.panel.installing}… · ${SHORT_TITLE}`
+      : screen === "done" ? `✓ ${t.panel.ready} · ${SHORT_TITLE}`
+      : baseTitle.current;
+  }, [screen, pct, t]);
+
   // ------------------------------------------------------------ firmware file
   async function takeFile(file: File | undefined) {
     if (!file) return;
@@ -188,9 +240,24 @@ export default function App() {
   const pickFile = () => fileInput.current?.click();
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
-    setDragOver(false);
+    setPageDrag(false);
     takeFile(e.dataTransfer.files[0]);
   };
+  const acceptsDrop = screen === "fwEmpty" || screen === "fwWrong" || screen === "fwValid";
+  useEffect(() => {
+    const hasFile = (e: globalThis.DragEvent) => e.dataTransfer?.types.includes("Files");
+    const enter = (e: globalThis.DragEvent) => { if (acceptsDrop && hasFile(e)) setPageDrag(true); };
+    // A file dropped outside the overlay (or on another step) would make the browser open it and lose the page.
+    const block = (e: globalThis.DragEvent) => { if (hasFile(e)) e.preventDefault(); };
+    window.addEventListener("dragenter", enter);
+    window.addEventListener("dragover", block);
+    window.addEventListener("drop", block);
+    return () => {
+      window.removeEventListener("dragenter", enter);
+      window.removeEventListener("dragover", block);
+      window.removeEventListener("drop", block);
+    };
+  }, [acceptsDrop]);
 
   // ------------------------------------------------------------ connect
   async function connect() {
@@ -318,10 +385,10 @@ export default function App() {
       <LanguagePicker languages={LANGS} selected={sel} onToggle={(id) => { setRestoreOnly(false); setSel({ ...sel, [id]: !sel[id] }); }} />
       <EmojiOption checked={emoji} onChange={(v) => { setRestoreOnly(false); setEmoji(v); }} />
       <p className="mt-3 flex gap-2 text-[13px] text-muted-foreground"><Info className="mt-0.5 size-3.5 shrink-0" />{t.noKorean}</p>
-      <Actions note={LANGS.some((l) => !l.tested) && <>{t.notTestedNote}{" "}<a className="text-foreground underline underline-offset-3" href={`${REPO}/issues`}>{t.tellUs}</a></>}>
+      <Actions note={LANGS.some((l) => !l.tested) && <>{t.notTestedNote}{" "}<a className="hit text-foreground underline underline-offset-3" href={`${REPO}/issues`}>{t.tellUs}</a></>}>
         <Button disabled={parts.length === 0} onClick={() => { setRestoreOnly(false); if (fwOk) startBuild(fwOk, parts); else setScreen("fwEmpty"); }}>{t.continue}</Button>
       </Actions>
-      <button type="button" className="mt-4 text-[13px] text-muted-foreground underline decoration-input underline-offset-3 hover:text-foreground hover:decoration-current"
+      <button type="button" className="hit mt-4 text-[13px] text-muted-foreground underline decoration-input underline-offset-3 hover:text-foreground hover:decoration-current"
         onClick={() => { setRestoreOnly(true); if (fwOk) startBuild(fwOk, []); else setScreen("fwEmpty"); }}>{t.removeAll}</button>
     </>
   );
@@ -339,17 +406,15 @@ export default function App() {
         onChange={(e) => { takeFile(e.target.files?.[0]); e.target.value = ""; }} />
 
       {screen === "fwEmpty" && (
-        <div onDrop={onDrop} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
-          className={cn("rounded-xl border border-dashed border-input bg-muted px-5 py-7 text-center transition-colors",
-            dragOver && "border-brand bg-brand/5")}>
+        <div className="rounded-xl border border-dashed border-input bg-muted px-5 py-7 text-center">
           <FileUp className="mx-auto size-5.5 text-faint" />
           <p className="mt-2">
             {t.drop}{" "}
-            <button type="button" className="font-medium underline decoration-input underline-offset-3 hover:decoration-current" onClick={pickFile}>{t.chooseFile}</button>
+            <button type="button" className="hit font-medium underline decoration-input underline-offset-3 hover:decoration-current" onClick={pickFile}>{t.chooseFile}</button>
           </p>
           <p className="mt-1 text-[13px] text-muted-foreground">{t.dropHint}</p>
           {DEMO !== null && (
-            <button type="button" className="mt-1 text-[13px] underline underline-offset-3" onClick={() => {
+            <button type="button" className="hit mt-1 text-[13px] underline underline-offset-3" onClick={() => {
               const demo: FirmwareOk = { ok: true, file: new File([], `CMF_JX402_08_ATS3089C_V${expected}_GPS_V6.bin`), version: expected, board: "JX402_08", sizeMb: 45.1 };
               setFw(demo);
               startBuild(demo);
@@ -601,7 +666,7 @@ export default function App() {
     <I18n.Provider value={{ lang: uiLang, t }}>
       <header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur-md backdrop-saturate-150">
         <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between gap-3 px-6 max-sm:px-4">
-          <a className="flex items-center gap-2.5 font-semibold tracking-tight" href="./">
+          <a className="flex items-center gap-2.5 font-semibold tracking-tight whitespace-nowrap" href="./">
             <span className="grid size-6 place-items-center rounded-full bg-foreground"><i className="size-3 rounded-full border-[1.5px] border-background" /></span>
             Watch Languages
             <Badge variant="outline" className="rounded-full font-medium text-muted-foreground max-sm:hidden">{t.unofficial}</Badge>
@@ -613,7 +678,7 @@ export default function App() {
                 <ToggleGroupItem key={l.id} value={l.id} aria-label={l.name} className="px-2.5 text-xs font-semibold">{l.label}</ToggleGroupItem>
               ))}
             </ToggleGroup>
-            <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground max-[379px]:hidden">
               <a href={REPO} aria-label="GitHub"><Code /><span className="max-sm:hidden">GitHub</span></a>
             </Button>
             <Button variant="ghost" size="icon-sm" className="text-muted-foreground" aria-label={dark ? t.themeToLight : t.themeToDark}
@@ -623,6 +688,16 @@ export default function App() {
           </div>
         </div>
       </header>
+      {pageDrag && acceptsDrop && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-6 backdrop-blur-sm animate-in fade-in-0 duration-150"
+          onDragOver={(e) => e.preventDefault()} onDragLeave={() => setPageDrag(false)} onDrop={onDrop}>
+          <div className="pointer-events-none flex w-full max-w-md flex-col items-center rounded-2xl border-2 border-dashed border-brand bg-background px-6 py-12 text-center">
+            <FileUp className="size-7 text-brand" />
+            <p className="mt-3 font-medium">{t.dropAnywhere}</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">{t.dropHint}</p>
+          </div>
+        </div>
+      )}
       {link.simulated && (
         <div className="border-b bg-muted px-6 py-2 text-center text-[13px] text-muted-foreground">
           <b className="font-medium text-foreground">{t.demo}</b> {t.demoBanner}
@@ -630,9 +705,13 @@ export default function App() {
       )}
 
       <div className="mx-auto max-w-[1120px] border-x max-sm:border-x-0">
-        <section className="px-6 pt-14 pb-10 max-sm:px-4 max-sm:pt-8 max-sm:pb-6">
-          <h1 className="max-w-[18ch] text-[clamp(28px,4vw,40px)] leading-[1.1] font-semibold tracking-[-0.035em]">{t.heroTitle}</h1>
-          <p className="mt-3.5 max-w-[54ch] text-[17px] text-muted-foreground max-sm:text-[15.5px]">{t.heroText(t.heroLangs)}</p>
+        <section className="grid grid-cols-[minmax(0,1fr)_400px] max-lg:grid-cols-1">
+          <div className="px-6 pt-14 pb-10 max-sm:px-4 max-sm:pt-8 max-sm:pb-6">
+            <h1 className="max-w-[18ch] text-[clamp(28px,4vw,40px)] leading-[1.1] font-semibold tracking-[-0.035em]">{t.heroTitle}</h1>
+            <p className="mt-3.5 max-w-[54ch] text-[17px] text-muted-foreground max-sm:text-[15.5px]">{t.heroText(t.heroLangs)}</p>
+          </div>
+          {/* Above the watch column: the same boxes turning into letters as at the bottom. */}
+          <div className="relative max-lg:hidden"><GlyphField variant="patch" /></div>
         </section>
 
         <div className="rule" />
@@ -644,7 +723,8 @@ export default function App() {
                   const state = cur === undefined ? "todo" : screen === "done" || i < cur ? "done" : i === cur ? "cur" : "todo";
                   const last = i === steps.length - 1;
                   return (
-                    <li key={i} className="relative pb-7 pl-10 max-sm:pl-9" aria-current={state === "cur" ? "step" : undefined}>
+                    <li key={i} className="relative pb-7 pl-10 [view-transition-class:step] max-sm:pl-9" aria-current={state === "cur" ? "step" : undefined}
+                      style={{ viewTransitionName: `step-${i}` }}>
                       {!last && <span className={cn("absolute top-[30px] bottom-1.5 left-[11px] w-px", state === "done" ? "bg-input" : "bg-border")} />}
                       <span className={cn("absolute top-0.5 left-0 grid size-[23px] place-items-center rounded-full border text-xs font-semibold tabular-nums",
                         state === "done" && "border-foreground bg-foreground text-background",
@@ -653,19 +733,19 @@ export default function App() {
                         {state === "done" ? <Check className="size-3" strokeWidth={3} /> : i + 1}
                       </span>
                       <div className="flex min-h-[27px] items-baseline gap-3 max-sm:flex-wrap">
-                        <h2 className={cn("text-base font-semibold tracking-tight", state === "todo" && "font-medium text-faint")}>{t.steps[i]}</h2>
+                        <h2 tabIndex={-1} className={cn("scroll-mt-20 text-base font-semibold tracking-tight outline-none", state === "todo" && "font-medium text-faint")}>{t.steps[i]}</h2>
                         {state === "done" && s.summary && (
                           <span className="ml-auto flex min-w-0 items-baseline gap-3 text-sm text-muted-foreground max-sm:ml-0 max-sm:basis-full">
                             <span className="truncate">{s.summary}</span>
                             {s.edit && !busy && screen !== "done" && (
-                              <button type="button" className="font-medium text-foreground underline decoration-input underline-offset-3 hover:decoration-current"
+                              <button type="button" className="hit font-medium text-foreground underline decoration-input underline-offset-3 hover:decoration-current"
                                 onClick={() => setScreen(s.edit!)}>{t.edit}</button>
                             )}
                           </span>
                         )}
                       </div>
                       {(state === "cur" || (screen === "done" && last)) && (
-                        <div key={screen.slice(0, 2)} className="mt-3.5 animate-in fade-in-0 slide-in-from-top-1 duration-200">{s.body}</div>
+                        <div key={screen.slice(0, 2)} className={cn("mt-3.5", !canTransition && "animate-in fade-in-0 slide-in-from-top-1 duration-200")}>{s.body}</div>
                       )}
                     </li>
                   );
@@ -679,14 +759,15 @@ export default function App() {
         </main>
         <div className="rule" />
 
-        <footer className="flex flex-wrap justify-between gap-x-6 gap-y-4 px-6 pt-6 pb-10 text-[13px] text-muted-foreground max-sm:px-4">
+        <footer className="[view-transition-name:footer] flex flex-wrap justify-between gap-x-6 gap-y-4 px-6 pt-6 pb-10 text-[13px] text-muted-foreground max-sm:px-4">
           <p className="max-w-[60ch]">{t.footer}</p>
           <nav className="flex gap-4.5" aria-label="Project links">
-            <a className="hover:text-foreground" href={`${REPO}#readme`}>{t.guide}</a>
-            <a className="hover:text-foreground" href={`${REPO}/blob/main/LICENSE`}>{t.license}</a>
-            <a className="hover:text-foreground" href={REPO}>GitHub</a>
+            <a className="hit hover:text-foreground" href={`${REPO}#readme`}>{t.guide}</a>
+            <a className="hit hover:text-foreground" href={`${REPO}/blob/main/LICENSE`}>{t.license}</a>
+            <a className="hit hover:text-foreground" href={REPO}>GitHub</a>
           </nav>
         </footer>
+        <GlyphField />
       </div>
     </I18n.Provider>
   );

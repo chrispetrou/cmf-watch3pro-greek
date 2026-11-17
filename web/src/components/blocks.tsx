@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ChevronRight, LoaderCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useT } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 export type Tone = "neutral" | "ok" | "warn" | "err";
@@ -41,13 +42,15 @@ export function Notice({ tone = "neutral", icon, title, children, className }: {
 
 /** "Technical details": key/value rows and the log, folded away. */
 export function Details({ rows = [], log }: { rows?: [string, string][]; log: string[] }) {
+  const { t } = useT();
   return (
     <Collapsible className="mt-3 text-[13px]">
-      <CollapsibleTrigger className="group flex items-center gap-1 rounded text-muted-foreground hover:text-foreground">
+      <CollapsibleTrigger className="hit group flex items-center gap-1 rounded text-muted-foreground hover:text-foreground">
         <ChevronRight className="size-3.5 transition-transform group-data-[state=open]:rotate-90" />
-        Technical details
+        {t.details}
       </CollapsibleTrigger>
-      <CollapsibleContent>
+      {/* Height follows Radix's measured content height, so it opens and closes smoothly. */}
+      <CollapsibleContent className="overflow-hidden duration-200 ease-[cubic-bezier(0.2,0,0,1)] data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
         {rows.length > 0 && (
           <dl className="mt-2.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 font-mono text-xs">
             {rows.map(([k, v]) => (

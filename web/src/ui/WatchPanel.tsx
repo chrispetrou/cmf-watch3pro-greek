@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { ArrowDownToLine, Bluetooth, BluetoothOff, Check, X } from "lucide-react";
 import type { Phase } from "@/ble/client";
 import type { Language } from "@/lib/languages";
@@ -33,8 +34,14 @@ function caption({ screen, phase, chosen, watchName, watchFw }: Props, p: String
 }
 
 function Face({ screen, phase, chosen, pct, watchFw }: Props) {
-  if (screen === "pairing" && phase !== "pairing") {
-    return <><span className="wacc"><Bluetooth className="size-6.5" /></span><span className="q" style={{ margin: "6px 0 0" }}>Connecting…</span></>;
+  // Looking for the watch or talking to it: the Bluetooth mark sends out rings.
+  if (screen === "searching" || (screen === "pairing" && phase !== "pairing")) {
+    return (
+      <>
+        <span className="wacc wping"><Bluetooth className="size-6.5" /></span>
+        <span className="q" style={{ margin: "14px 0 0" }}>{screen === "searching" && phase === null ? "Searching…" : "Connecting…"}</span>
+      </>
+    );
   }
   switch (screen) {
     case "choose":
@@ -62,7 +69,7 @@ function Face({ screen, phase, chosen, pct, watchFw }: Props) {
     case "mismatch":
       return <><span className="wacc"><Bluetooth className="size-6.5" /></span><span className="q" style={{ margin: "6px 0 0" }}>Connected</span><span className="small">FW {watchFw}</span></>;
     case "transfer":
-      return <><span className="small" style={{ marginTop: 0 }}>Receiving</span><span className="big" style={{ fontSize: 34, marginTop: 4 }}>{pct}%</span><span className="wbar"><i style={{ width: `${pct}%` }} /></span></>;
+      return <><span className="small" style={{ marginTop: 0 }}>Receiving</span><span className="big" style={{ fontSize: 34, marginTop: 4 }}>{pct}%</span></>;
     case "installing":
       return <><span className="wspin" /><span className="q" style={{ margin: "10px 0 0" }}>Updating…</span></>;
     case "done": {
@@ -87,7 +94,10 @@ export function WatchPanel(props: Props) {
         <div className="watch" aria-hidden="true">
           <span className="strap t" /><span className="strap b" />
           <span className="crown a" /><span className="crown b" />
-          <span className="case"><span className="bezel"><span className="screen"><Face {...props} /></span></span></span>
+          <span className="case"><span className="bezel">
+            {/* During the transfer the bezel fills up like a progress ring. */}
+            {props.screen === "transfer" && <span className="pring" style={{ "--p": props.pct } as CSSProperties} />}
+            <span className="screen"><Face {...props} /></span></span></span>
         </div>
       </div>
       <div className="mt-4.5 max-w-[30ch] text-center max-lg:mt-1.5" aria-live="polite">

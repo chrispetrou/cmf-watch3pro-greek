@@ -131,6 +131,15 @@
   @media (max-width: 640px) { &::before, &::after { display: none; } }
 }
 
+/* A bigger tap area for small text buttons and links, without changing the layout. */
+@utility hit {
+  position: relative;
+  &::after { content: ""; position: absolute; inset: -10px -6px; }
+}
+
+/* The frame's corner crosses sit just outside it; don't let them make the page scroll sideways. */
+html, body { overflow-x: clip; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
 }

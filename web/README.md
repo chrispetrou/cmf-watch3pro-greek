@@ -1,6 +1,6 @@
 # Web app
 
-A browser version of the tools, so people can add a language to their watch without a terminal.
+A browser version of the tools, so people can add a language or more emoji to their watch without a terminal.
 It follows the wizard in the design handoff: choose languages, add the official firmware file,
 connect the watch, install.
 
