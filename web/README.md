@@ -6,6 +6,8 @@ connect the watch, install.
 
 What's real so far:
 
+- "Remove the languages": installs the official file unchanged (the same path as the recovery
+  restore), to undo the patch or get Korean back;
 - checking the firmware file (same checks as `tools/patch.py`: AOTA header, CRCs, board, version);
 - the download link, from the Nothing Archive list (Nothing's CDN doesn't allow the browser to
   fetch the file itself, so the user downloads it);

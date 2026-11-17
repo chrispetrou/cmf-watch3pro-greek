@@ -75,6 +75,8 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(storedTheme);
   const [sysDark, setSysDark] = useState(systemDark);
   const [sel, setSel] = useState<Record<string, boolean>>({ greek: true });
+  // "Remove the languages": install Nothing's file unchanged, the same path as a recovery restore.
+  const [restoreOnly, setRestoreOnly] = useState(false);
   const [release, setRelease] = useState<Release | null>(null);
   const [fw, setFw] = useState<FirmwareCheck | null>(null);
   const [checkPct, setCheckPct] = useState(0);
@@ -136,7 +138,7 @@ export default function App() {
   const fwOk = fw?.ok ? fw : null;
   const expected = release?.version ?? "1.0.1.77";
   const ready = checks.filter(Boolean).length;
-  const langIds = chosen.map((l) => l.id);
+  const langIds = restoreOnly ? [] : chosen.map((l) => l.id);
   const buildFresh = !!fwOk && !!built && built.key === buildKey(fwOk.file, langIds) && !buildError;
   const addLog = (m: string) =>
     setLog((l) => [...l, `[${new Date().toLocaleTimeString([], { hour12: false })}] ${m}`]);
@@ -154,15 +156,16 @@ export default function App() {
   }
 
   // ------------------------------------------------------------ build
-  async function startBuild(check: FirmwareOk) {
-    const key = buildKey(check.file, langIds);
+  async function startBuild(check: FirmwareOk, langs = langIds) {
+    const key = buildKey(check.file, langs);
     if (built?.key === key && !buildError) { setScreen("fwValid"); return; }
     setScreen("fwBuilding");
     setBuildError(null);
     setBuilt(null);
     setLog([]);
     try {
-      const result = check.file.size === 0 ? null : await buildImage(check.file, langIds, addLog);
+      // Nothing to build for the demo file or when installing the official firmware unchanged.
+      const result = check.file.size === 0 || langs.length === 0 ? null : await buildImage(check.file, langs, addLog);
       if (result && !result.versionOk) throw new Error("VERSION_CHECK");
       if (result) addLog(`built ${(result.image.size / 1e6).toFixed(1)} MB, sha256 ${result.sha256}`);
       setBuilt({ key, result });
@@ -306,17 +309,19 @@ export default function App() {
   const chooseBody = (
     <>
       <Lede>{t.chooseLede}</Lede>
-      <LanguagePicker languages={LANGS} selected={sel} onToggle={(id) => setSel({ ...sel, [id]: !sel[id] })} />
+      <LanguagePicker languages={LANGS} selected={sel} onToggle={(id) => { setRestoreOnly(false); setSel({ ...sel, [id]: !sel[id] }); }} />
       <p className="mt-3 flex gap-2 text-[13px] text-muted-foreground"><Info className="mt-0.5 size-3.5 shrink-0" />{t.noKorean}</p>
       <Actions note={<>{t.notTestedNote}{" "}<a className="text-foreground underline underline-offset-3" href={`${REPO}/issues`}>{t.tellUs}</a></>}>
-        <Button disabled={chosen.length === 0} onClick={() => (fwOk ? startBuild(fwOk) : setScreen("fwEmpty"))}>{t.continue}</Button>
+        <Button disabled={chosen.length === 0} onClick={() => { setRestoreOnly(false); if (fwOk) startBuild(fwOk, chosen.map((l) => l.id)); else setScreen("fwEmpty"); }}>{t.continue}</Button>
       </Actions>
+      <button type="button" className="mt-4 text-[13px] text-muted-foreground underline decoration-input underline-offset-3 hover:text-foreground hover:decoration-current"
+        onClick={() => { setRestoreOnly(true); if (fwOk) startBuild(fwOk, []); else setScreen("fwEmpty"); }}>{t.removeAll}</button>
     </>
   );
 
   const fwBody = (
     <>
-      <Lede>{t.fwLede}</Lede>
+      <Lede>{restoreOnly ? t.fwLedeRestore : t.fwLede}</Lede>
       <div className="mb-3.5 flex flex-wrap items-center gap-3">
         <Button variant="outline" asChild>
           <a href={release?.url ?? "https://github.com/spike0en/nothing_archive"}><Download />{t.download(expected)}</a>
@@ -384,9 +389,11 @@ export default function App() {
           {details([["Image", `${(built.result.image.size / 1e6).toFixed(1)} MB`], ["SHA-256", built.result.sha256], ["Font version", "29, matches the app"]])}
         </>
       )}
-      {screen === "fwValid" && buildFresh && built && !built.result && (
+      {screen === "fwValid" && buildFresh && built && !built.result && (restoreOnly ? (
+        <FileRow className="mt-3" tone="ok" icon={<Check />} name={t.officialUnchanged} meta={t.officialUnchangedMeta} />
+      ) : (
         <p className="mt-3 text-[13px] text-muted-foreground">{t.demoNoBuild}</p>
-      )}
+      ))}
       {screen === "fwWrong" && fw && !fw.ok && (
         <>
           <FileRow tone="err" icon={<X />} name={fw.file.name} mono
@@ -455,7 +462,7 @@ export default function App() {
             </dl>
           </Notice>
           <Actions note={t.upTo30}>
-            <Button onClick={() => install(chosen.map((l) => l.id))}>{t.startInstall}</Button>
+            <Button onClick={() => install(langIds)}>{t.startInstall}</Button>
           </Actions>
         </>
       )}
@@ -552,7 +559,7 @@ export default function App() {
   );
 
   const steps: { summary?: ReactNode; edit?: Screen; body: ReactNode }[] = [
-    { summary: chosenNames, edit: "choose", body: chooseBody },
+    { summary: restoreOnly ? t.noneOfficial : chosenNames, edit: "choose", body: chooseBody },
     { summary: fwOk && t.fwSummary(fwOk.version), edit: "fwValid", body: fwBody },
     { summary: watch && `${watch.name}, ${watch.firmware}`, edit: "prep", body: connectBody },
     { body: installBody },
