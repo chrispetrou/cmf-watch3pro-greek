@@ -2,6 +2,9 @@
 // The technical log stays in English on purpose: it's for debugging and bug reports.
 import { createContext, useContext } from "react";
 
+/** First letter upper case, for a list that starts a sentence ("emoji added" -> "Emoji added"). */
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 export type UiLang = "en" | "el";
 export const UI_LANGS: { id: UiLang; label: string; name: string }[] = [
   { id: "en", label: "EN", name: "English" },
@@ -20,9 +23,9 @@ const en = {
   demoBanner: "No watch is connected and nothing is sent, the screens are simulated.",
   demo: "Demo.",
   heroTitle: "Read your language on the CMF Watch 3 Pro",
-  heroText: (langs: string) => `Adds ${langs} letters to the watch’s own font, in your browser. Free and open source. Not affiliated with Nothing or CMF.`,
+  heroText: (langs: string) => `Adds ${langs} letters and hundreds more emoji to the watch’s own font, in your browser. Free and open source. Not affiliated with Nothing or CMF.`,
   heroLangs: "Greek, Georgian or Armenian",
-  footer: "Not affiliated with Nothing or CMF. Use at your own risk. No firmware is provided here, everything is processed on your device.",
+  footer: "Not affiliated with Nothing or CMF. Use at your own risk. No firmware is provided here, everything is processed on your device. Emoji: Twemoji (CC-BY 4.0) and Noto Emoji.",
   guide: "Guide",
   license: "License",
 
@@ -42,7 +45,10 @@ const en = {
   testedLong: "Confirmed working on a real watch.",
   notTestedNote: "Not tested yet means it should work, but nobody has confirmed it on a real watch.",
   tellUs: "Tell us how it went",
-  removeAll: "Remove the languages (install the official firmware)",
+  removeAll: "Remove the languages and emoji (install the official firmware)",
+  emojiTitle: "More emoji",
+  emojiText: "About 450 colour emoji, plus hearts, check marks and other symbols in white.",
+  emojiItem: "emoji",
   noneOfficial: "None, official firmware",
   officialUnchanged: "Nothing to add: the official firmware goes on unchanged",
   officialUnchangedMeta: "Removes the added languages and brings Korean back",
@@ -56,7 +62,7 @@ const en = {
   requestIt: "Request it",
 
   // 2. firmware
-  fwLede: "Your languages are added to Nothing’s official update, right here in the browser. Download it from Nothing, then add it below. It isn’t uploaded anywhere.",
+  fwLede: "What you chose is added to Nothing’s official update, right here in the browser. Download it from Nothing, then add it below. It isn’t uploaded anywhere.",
   download: (v: string) => `Download firmware ${v}`,
   downloadNote: "About 45 MB, from Nothing’s servers",
   drop: "Drop the update file here, or",
@@ -70,9 +76,9 @@ const en = {
   adding: (langs: string) => `Adding ${langs}`,
   buildNote: "Runs on this device and takes a few seconds. The first time also loads the build tools (about 10 MB).",
   buildFailed: "Couldn’t add the languages",
-  tooBig: "These languages don’t fit on the watch together. Choose fewer languages and try again.",
+  tooBig: "This doesn’t fit on the watch. Choose fewer languages or turn off More emoji, and try again.",
   versionCheckFailed: "The font version check failed, so the watch could reject this image at boot. Stopping here to keep it safe.",
-  added: (langs: string) => `${langs} added`,
+  added: (langs: string) => `${cap(langs)} added`,
   fontOk: "Font check passed",
   notSentYet: "Not sent to the watch yet",
   downloadPatched: "Download",
@@ -135,7 +141,7 @@ const en = {
   checkingIn: (s: number) => `The watch is installing and restarting. Checking it in ${s} s.`,
   checkingNow: "Checking the watch…",
   doneOfficial: "The official firmware is back on your watch",
-  doneLangs: (langs: string, many: boolean) => `${langs} ${many ? "are" : "is"} on your watch`,
+  doneLangs: (langs: string, many: boolean) => `${cap(langs)} ${many ? "are" : "is"} on your watch`,
   doneVerified: (v: string) => `The watch restarted and runs firmware ${v}.`,
   doneUnverified: "The watch received the whole update and installs it by itself.",
   checkScreen: "Check the watch screen",
@@ -215,9 +221,9 @@ const el: Strings = {
   demoBanner: "Δεν είναι συνδεδεμένο ρολόι και δεν στέλνεται τίποτα, οι οθόνες είναι προσομοίωση.",
   demo: "Δοκιμή.",
   heroTitle: "Διάβασε τη γλώσσα σου στο CMF Watch 3 Pro",
-  heroText: (langs: string) => `Προσθέτει ${langs} γράμματα στη γραμματοσειρά του ρολογιού, μέσα από τον browser σου. Δωρεάν και ανοιχτού κώδικα. Not affiliated with Nothing or CMF.`,
+  heroText: (langs: string) => `Προσθέτει ${langs} γράμματα και εκατοντάδες ακόμη emoji στη γραμματοσειρά του ρολογιού, μέσα από τον browser σου. Δωρεάν και ανοιχτού κώδικα. Not affiliated with Nothing or CMF.`,
   heroLangs: "Ελληνικά, Γεωργιανά ή Αρμενικά",
-  footer: "Not affiliated with Nothing or CMF. Η χρήση γίνεται με δική σου ευθύνη. Δεν παρέχεται κάποιο firmware, όλα γίνονται στη συσκευή σου.",
+  footer: "Not affiliated with Nothing or CMF. Η χρήση γίνεται με δική σου ευθύνη. Δεν παρέχεται κάποιο firmware, όλα γίνονται στη συσκευή σου. Emoji: Twemoji (CC-BY 4.0) και Noto Emoji.",
   guide: "Οδηγός",
   license: "Άδεια",
 
@@ -235,7 +241,10 @@ const el: Strings = {
   testedLong: "Επιβεβαιωμένη σε πραγματικό ρολόι.",
   notTestedNote: "«Untested» σημαίνει ότι θα πρέπει να δουλεύει, αλλά κανείς δεν το έχει επιβεβαιώσει ακόμη σε πραγματικό ρολόι.",
   tellUs: "Πες μας πώς πήγε",
-  removeAll: "Αφαίρεση των γλωσσών (εγκατάσταση του επίσημου firmware)",
+  removeAll: "Αφαίρεση των γλωσσών και των emoji (εγκατάσταση του επίσημου firmware)",
+  emojiTitle: "Περισσότερα emoji",
+  emojiText: "Περίπου 450 έγχρωμα emoji, και καρδιές, τικ και άλλα σύμβολα σε λευκό.",
+  emojiItem: "emoji",
   noneOfficial: "Καμία, επίσημο firmware",
   officialUnchanged: "Τίποτα για προσθήκη: το επίσημο firmware εγκαθίσταται όπως είναι",
   officialUnchangedMeta: "Αφαιρεί τις γλώσσες που προστέθηκαν και επαναφέρει τα Κορεατικά",
@@ -248,7 +257,7 @@ const el: Strings = {
   noMatch: (q: string) => `Καμία γλώσσα δεν ταιριάζει με «${q}».`,
   requestIt: "Ζήτησέ τη",
 
-  fwLede: "Οι γλώσσες σου προστίθενται στην επίσημη ενημέρωση της Nothing. Κατέβασέ τη από τη Nothing και πρόσθεσέ τη παρακάτω, δεν γίνεται upload πουθενά.",
+  fwLede: "Ό,τι διάλεξες προστίθεται στην επίσημη ενημέρωση της Nothing. Κατέβασέ τη από τη Nothing και πρόσθεσέ τη παρακάτω, δεν γίνεται upload πουθενά.",
   download: (v: string) => `Λήψη firmware ${v}`,
   downloadNote: "Περίπου 45 MB, από τους servers της Nothing",
   drop: "Σύρε εδώ το αρχείο της ενημέρωσης ή",
@@ -262,7 +271,7 @@ const el: Strings = {
   adding: (langs: string) => `Προσθήκη: ${langs}`,
   buildNote: "Γίνεται σε αυτή τη συσκευή και διαρκεί λίγα δευτερόλεπτα. Την πρώτη φορά φορτώνονται και τα εργαλεία (περίπου 10 MB).",
   buildFailed: "Δεν ήταν δυνατή η προσθήκη των γλωσσών",
-  tooBig: "Αυτές οι γλώσσες δεν χωράνε μαζί στο ρολόι. Διάλεξε λιγότερες και δοκίμασε ξανά.",
+  tooBig: "Δεν χωράνε όλα στο ρολόι. Διάλεξε λιγότερες γλώσσες ή απενεργοποίησε τα Περισσότερα emoji και δοκίμασε ξανά.",
   versionCheckFailed: "Ο έλεγχος έκδοσης της γραμματοσειράς απέτυχε, οπότε το ρολόι μπορεί να απορρίψει αυτό το αρχείο στην εκκίνηση. Σταματάμε εδώ για ασφάλεια.",
   added: (langs: string) => `Προστέθηκαν: ${langs}`,
   fontOk: "Ο έλεγχος γραμματοσειράς πέρασε",

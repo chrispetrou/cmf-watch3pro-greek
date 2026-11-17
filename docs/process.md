@@ -115,3 +115,16 @@ Running Python tools from a terminal is too much for most people, so the same st
 - **Platforms.** Web Bluetooth exists only in Chromium browsers. It was tested in Chrome and Dia on macOS. On iPhone every browser is built on WebKit, which has no Web Bluetooth, so the page cannot work there.
 
 Greek, Georgian and Armenian were all flashed from the page to a watch on 1.0.1.77.
+
+## 12. Emoji
+
+The stock emoji font has only 53 emoji, so most emoji in notifications showed as boxes. Its format wasn't documented. The index was easy to read (codepoint, size, offset), but the pixels took longer: 3 bytes each, and read as RGB565 plus an alpha byte the shapes were right but the colours were wrong. The stock emoji are Twemoji, so the Twemoji PNGs, scaled to the same 30 x 30, gave something to compare against. A least-squares fit of each colour channel against the 16 low bits showed blue in bits 0-5 and green in bits 6-11 with 6 bits each, which made it ARGB6666: 6 bits each of alpha, red, green and blue in 24 bits.
+
+Three test images on the watch settled the rest:
+
+1. Ten extra emoji added to the font: the seven at U+1F389 and above showed, but ✅ (U+2705), ❤ (U+2764) and the invisible U+FE0F after ❤ showed as boxes. The watch reads the emoji count from the file, but it only looks in the emoji font for high codepoints. The rest go to the text font.
+2. The symbols below that added to the text font as white glyphs from Noto Emoji, and U+FE0F as an empty glyph: these worked, except two that fell inside an existing sparse cmap range. I had merged them into that range by converting it to LVGL's "sparse full" subtable type, which the stock font never uses, and the watch didn't find them. Flag letters added to the emoji font showed as boxes, so the split is above U+1F1FF.
+3. The sparse ranges split around the new codepoints instead (only the subtable types the stock font uses): all symbols showed. The flag letters as capitals in the text font made 🇬🇷 read GR. Skin tones as 1 x 1 transparent emoji with an advance of 0 disappeared; with the stock advance of 33 they left a gap, which showed what that field is.
+
+The final option adds 452 colour emoji, the 450 most used single-character ones from Unicode's 2019 frequency ranking that the watch doesn't have plus 🎄 and 🎅, about 160 white symbols, and the invisible and flag entries. It takes about 1.2 MB of the font partition. A fourth test with the full build confirmed the split is at U+1F300: 🌈 (U+1F308), 🌹, 🌸, 🎁 and 🎂 showed in colour. 🎄 was a box because it ranked 558th, below the cut, so it and 🎅 were added by hand.
+

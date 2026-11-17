@@ -13,10 +13,10 @@ import { type Phase, webBluetoothAvailable } from "@/ble/client";
 import { type BuildResult, buildImage } from "@/build";
 import { I18n, STRINGS, UI_LANGS, type UiLang, storedUiLang } from "@/i18n";
 import { type FirmwareCheck, type Release, checkFirmware, latestRelease } from "@/lib/firmware";
-import { LANGUAGES, type Language, demoLanguages } from "@/lib/languages";
+import { EMOJI_PREVIEW, LANGUAGES, type Language, demoLanguages } from "@/lib/languages";
 import { cn } from "@/lib/utils";
 import { BluetoothWatch, DemoWatch, type WatchInfo, type WatchLink } from "@/lib/watch";
-import { LanguagePicker } from "@/ui/LanguagePicker";
+import { EmojiOption, LanguagePicker } from "@/ui/LanguagePicker";
 import { STEP, type Screen } from "@/ui/screens";
 import { WatchPanel } from "@/ui/WatchPanel";
 
@@ -77,6 +77,7 @@ export default function App() {
   const [sel, setSel] = useState<Record<string, boolean>>({ greek: true });
   // "Remove the languages": install Nothing's file unchanged, the same path as a recovery restore.
   const [restoreOnly, setRestoreOnly] = useState(false);
+  const [emoji, setEmoji] = useState(true);
   const [release, setRelease] = useState<Release | null>(null);
   const [fw, setFw] = useState<FirmwareCheck | null>(null);
   const [checkPct, setCheckPct] = useState(0);
@@ -132,13 +133,17 @@ export default function App() {
 
   const chosen = LANGS.filter((l) => sel[l.id]);
   const langName = (l: Language) => (uiLang === "el" ? l.el ?? l.en : l.en);
-  const chosenNames = t.list(chosen.map(langName));
+  // What gets added: the languages, plus "emoji" for the emoji option (also in the build key,
+  // the install and the download name).
+  const parts = [...chosen.map((l) => l.id), ...(emoji ? ["emoji"] : [])];
+  const chosenNames = t.list([...chosen.map(langName), ...(emoji ? [t.emojiItem] : [])]);
+  const manyParts = parts.length > 1 || emoji;
   const cur = STEP[screen];
   const busy = installing || screen === "transfer" || screen === "installing";
   const fwOk = fw?.ok ? fw : null;
   const expected = release?.version ?? "1.0.1.77";
   const ready = checks.filter(Boolean).length;
-  const langIds = restoreOnly ? [] : chosen.map((l) => l.id);
+  const langIds = restoreOnly ? [] : parts;
   const buildFresh = !!fwOk && !!built && built.key === buildKey(fwOk.file, langIds) && !buildError;
   const addLog = (m: string) =>
     setLog((l) => [...l, `[${new Date().toLocaleTimeString([], { hour12: false })}] ${m}`]);
@@ -165,7 +170,8 @@ export default function App() {
     setLog([]);
     try {
       // Nothing to build for the demo file or when installing the official firmware unchanged.
-      const result = check.file.size === 0 || langs.length === 0 ? null : await buildImage(check.file, langs, addLog);
+      const result = check.file.size === 0 || langs.length === 0 ? null
+        : await buildImage(check.file, langs.filter((l) => l !== "emoji"), langs.includes("emoji"), addLog);
       if (result && !result.versionOk) throw new Error("VERSION_CHECK");
       if (result) addLog(`built ${(result.image.size / 1e6).toFixed(1)} MB, sha256 ${result.sha256}`);
       setBuilt({ key, result });
@@ -310,9 +316,10 @@ export default function App() {
     <>
       <Lede>{t.chooseLede}</Lede>
       <LanguagePicker languages={LANGS} selected={sel} onToggle={(id) => { setRestoreOnly(false); setSel({ ...sel, [id]: !sel[id] }); }} />
+      <EmojiOption checked={emoji} onChange={(v) => { setRestoreOnly(false); setEmoji(v); }} />
       <p className="mt-3 flex gap-2 text-[13px] text-muted-foreground"><Info className="mt-0.5 size-3.5 shrink-0" />{t.noKorean}</p>
       <Actions note={LANGS.some((l) => !l.tested) && <>{t.notTestedNote}{" "}<a className="text-foreground underline underline-offset-3" href={`${REPO}/issues`}>{t.tellUs}</a></>}>
-        <Button disabled={chosen.length === 0} onClick={() => { setRestoreOnly(false); if (fwOk) startBuild(fwOk, chosen.map((l) => l.id)); else setScreen("fwEmpty"); }}>{t.continue}</Button>
+        <Button disabled={parts.length === 0} onClick={() => { setRestoreOnly(false); if (fwOk) startBuild(fwOk, parts); else setScreen("fwEmpty"); }}>{t.continue}</Button>
       </Actions>
       <button type="button" className="mt-4 text-[13px] text-muted-foreground underline decoration-input underline-offset-3 hover:text-foreground hover:decoration-current"
         onClick={() => { setRestoreOnly(true); if (fwOk) startBuild(fwOk, []); else setScreen("fwEmpty"); }}>{t.removeAll}</button>
@@ -516,7 +523,7 @@ export default function App() {
       )}
       {screen === "done" && (
         <>
-          <Notice tone="ok" icon={<Check />} title={restoring ? t.doneOfficial : t.doneLangs(chosenNames, chosen.length > 1)}>
+          <Notice tone="ok" icon={<Check />} title={restoring ? t.doneOfficial : t.doneLangs(chosenNames, manyParts)}>
             {newFw ? t.doneVerified(newFw) : t.doneUnverified}
           </Notice>
           {!newFw && (
@@ -550,7 +557,7 @@ export default function App() {
             {details()}
           </Notice>
           <Actions>
-            <Button onClick={() => install(restoring ? [] : chosen.map((l) => l.id))}><RotateCw />{t.tryAgain}</Button>
+            <Button onClick={() => install(restoring ? [] : parts)}><RotateCw />{t.tryAgain}</Button>
             <Button variant="ghost" onClick={() => { setWatch(null); setScreen("prep"); }}>{t.connectAgain}</Button>
           </Actions>
         </>
@@ -559,7 +566,7 @@ export default function App() {
   );
 
   const steps: { summary?: ReactNode; edit?: Screen; body: ReactNode }[] = [
-    { summary: restoreOnly ? t.noneOfficial : chosenNames, edit: "choose", body: chooseBody },
+    { summary: restoreOnly ? t.noneOfficial : chosenNames.charAt(0).toUpperCase() + chosenNames.slice(1), edit: "choose", body: chooseBody },
     { summary: fwOk && t.fwSummary(fwOk.version), edit: "fwValid", body: fwBody },
     { summary: watch && `${watch.name}, ${watch.firmware}`, edit: "prep", body: connectBody },
     { body: installBody },
@@ -667,7 +674,7 @@ export default function App() {
             )}
           </section>
           <aside className="max-lg:order-first max-lg:border-b">
-            <WatchPanel screen={screen} phase={phase} chosen={chosen} pct={pct} watchName={watch?.name ?? null} watchFw={watch?.firmware ?? null} />
+            <WatchPanel screen={screen} phase={phase} chosen={emoji ? [...chosen, EMOJI_PREVIEW] : chosen} pct={pct} watchName={watch?.name ?? null} watchFw={watch?.firmware ?? null} />
           </aside>
         </main>
         <div className="rule" />

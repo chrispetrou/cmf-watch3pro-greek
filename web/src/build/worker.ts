@@ -2,6 +2,7 @@
 import { loadPyodide, type PyodideInterface } from "pyodide";
 import glue from "./glue.py?raw";
 import buildFirmware from "../../../tools/build_firmware.py?raw";
+import emojifont from "../../../tools/emojifont.py?raw";
 import fetchPy from "../../../tools/fetch.py?raw";
 import fontbuild from "../../../tools/fontbuild.py?raw";
 import languages from "../../../tools/languages.py?raw";
@@ -11,7 +12,7 @@ import sdfs from "../../../tools/sdfs.py?raw";
 import type { BuildRequest, BuildResponse } from "./types";
 
 const MODULES: Record<string, string> = {
-  "glue.py": glue, "build_firmware.py": buildFirmware, "fetch.py": fetchPy, "fontbuild.py": fontbuild,
+  "glue.py": glue, "build_firmware.py": buildFirmware, "emojifont.py": emojifont, "fetch.py": fetchPy, "fontbuild.py": fontbuild,
   "languages.py": languages, "lvfont.py": lvfont, "repack.py": repack, "sdfs.py": sdfs,
 };
 
@@ -30,12 +31,12 @@ function init(indexURL: string) {
 }
 
 self.onmessage = async (e: MessageEvent<BuildRequest>) => {
-  const { firmware, langs, glyphs, indexURL } = e.data;
+  const { firmware, langs, glyphs, emoji, indexURL } = e.data;
   try {
     post({ type: "log", msg: "loading the build tools" });
     const py = await init(indexURL);
     const run = py.pyimport("glue").run;
-    const res = run(new Uint8Array(firmware), py.toPy(langs), py.toPy(glyphs), (m: string) => post({ type: "log", msg: m }));
+    const res = run(new Uint8Array(firmware), py.toPy(langs), py.toPy(glyphs), (m: string) => post({ type: "log", msg: m }), emoji ?? null);
     const [img, ok] = res.toJs({ create_proxies: false }) as [Uint8Array, boolean];
     res.destroy?.();
     const image = img.slice().buffer;
