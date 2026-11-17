@@ -36,6 +36,14 @@ FONTS = {
         "file": "NotoSansArmenian-Medium.ttf",
         "sha256": "315114c2b6737f0f0aab3e6abb70febb7e1c77d065f3602e61ec74e9e07f20aa",
     },
+    # Monochrome emoji for the symbols below U+1F300 (see emoji.py), pinned to a google/fonts commit.
+    "noto-emoji": {
+        "name": "Noto Emoji (monochrome)",
+        "url": "https://raw.githubusercontent.com/google/fonts/8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5/"
+               "ofl/notoemoji/NotoEmoji%5Bwght%5D.ttf",
+        "file": "NotoEmoji.ttf",
+        "sha256": "de6c18832938afc99caf132b39d6a30a19bac7f2e812e28db2535b4608d27551",
+    },
 }
 
 LANGUAGES = {

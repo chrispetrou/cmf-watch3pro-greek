@@ -19,6 +19,25 @@ def cmap_blob(f, c):
     raise ValueError(t)
 
 
+def _split_around(entries, e, cp):
+    """Split sparse-tiny entry e so that cp lies outside it. The watch only reads the cmap
+    entry types the stock font uses (contiguous and sparse-tiny), so a new codepoint inside a
+    sparse range gets its own run between the two halves instead of being merged in."""
+    if e["type"] != 3: raise ValueError(f"cannot split cmap entry type {e['type']}")
+    n, end = e["count"], e["start"] + e["length"]
+    cps = [e["start"] + struct.unpack_from("<H", e["blob"], 2 * i)[0] for i in range(n)]
+    left = [c for c in cps if c < cp]
+    right = [c for c in cps if c > cp]
+    i = entries.index(e)
+    parts = []
+    for part, gid0, lo, hi in ((left, e["gid_start"], e["start"], cp), (right, e["gid_start"] + len(left), cp + 1, end)):
+        if not part: continue
+        lo = part[0] if part is right else lo
+        parts.append(dict(start=lo, length=hi - lo, gid_start=gid0, count=len(part), type=3,
+                          blob=b"".join(struct.pack("<H", c - lo) for c in part)))
+    entries[i:i + 1] = parts
+
+
 def build(f, drop=lambda cp_start: False, add=()):
     """
     f    : LvFont (original)
@@ -63,6 +82,12 @@ def build(f, drop=lambda cp_start: False, add=()):
         if c in dropped_entries: continue
         e = dict(c); e["gid_start"] = remap[c["gid_start"]]; e["blob"] = cmap_blob(f, c)
         entries.append(e)
+    # The lookup stops at the first cmap entry whose range holds the codepoint, so a range
+    # that would hide a new codepoint is split around it.
+    for cp, _ in new_cps:
+        host = next((e for e in entries if e["start"] <= cp < e["start"] + e["length"]), None)
+        if host is not None:
+            _split_around(entries, host, cp)
     runs = []
     for cp, gid in sorted(new_cps):
         if runs and cp == runs[-1]["start"] + runs[-1]["length"] and gid == runs[-1]["gid_start"] + runs[-1]["length"]:

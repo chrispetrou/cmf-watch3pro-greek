@@ -8,6 +8,7 @@ Fetch the latest CMF Watch 3 Pro firmware, add the glyphs for one or more langua
 
 Options:
   --lang LANGS           comma-separated languages to add (see tools/languages.py), e.g. greek
+  --emoji                also add about 450 colour emoji and the emoji symbols (see tools/emoji.py)
   --file PATH            use a local official .bin instead of downloading
   --url URL              download this official .bin instead of looking it up
   --address ADDR         watch BLE address (else remembered / scanned)
@@ -141,15 +142,15 @@ def get_firmware(args):
     return ver, path
 
 
-def build_patched(ver, official, langs):
+def build_patched(ver, official, langs, emoji=False):
     from build_firmware import build_image
     conv = ensure_toolchain()
-    out = os.path.join(FWDIR, f"CMF_Watch3Pro_{ver}_{'-'.join(langs)}.bin")
+    out = os.path.join(FWDIR, f"CMF_Watch3Pro_{ver}_{'-'.join(langs + ['emoji'] * emoji)}.bin")
     if os.path.exists(out) and os.path.getmtime(out) > os.path.getmtime(official):
         say(f"patched image already built: {os.path.relpath(out, ROOT)}")
         return out
-    say(f"building {ver} with {', '.join(langs)}")
-    if not build_image(official, langs, out, conv, CACHE):
+    say(f"building {ver} with {', '.join(langs + ['emoji'] * emoji)}")
+    if not build_image(official, langs, out, conv, CACHE, emoji=emoji):
         os.rename(out, out + ".UNSAFE")
         die("font version check failed: the app would reject this image at boot. "
             "Not flashing. See docs/firmware-format.md (expected-version table).", 2)
@@ -237,6 +238,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd", nargs="?", default="all", choices=["all", "check", "build", "flash"])
     ap.add_argument("--lang", help="comma-separated languages to add, e.g. greek")
+    ap.add_argument("--emoji", action="store_true", help="also add the extra emoji")
     ap.add_argument("--file")
     ap.add_argument("--url")
     ap.add_argument("--address")
@@ -247,9 +249,12 @@ def main():
     if args.cmd == "check":
         asyncio.run(check(args))
         return
-    langs = parse_langs(args.lang)
+    if not args.lang and not args.emoji:
+        die("give --lang, --emoji or both")
+    langs = parse_langs(args.lang) if args.lang else []
     ver, official = get_firmware(args)
-    image = build_patched(ver, official, langs)
+    image = build_patched(ver, official, langs, args.emoji)
+    langs = langs + ["emoji"] * args.emoji
     if args.cmd == "build":
         say(f"ready: {os.path.relpath(image, ROOT)}")
         return
