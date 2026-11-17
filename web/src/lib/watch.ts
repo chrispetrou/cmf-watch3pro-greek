@@ -12,8 +12,14 @@ export interface WatchLink {
   connect(opts: { showAll: boolean; onPhase: (p: Phase) => void; log: (m: string) => void }): Promise<WatchInfo>;
   /** Send this image to the watch. `langs` is empty when restoring the official firmware. */
   install(opts: { image: Blob; langs: string[]; onProgress: (p: Progress) => void; signal: AbortSignal }): Promise<void>;
-  /** Waits for the watch to install the update and restart, then returns its firmware version. */
-  waitForRestart(signal: AbortSignal, onStatus: (m: string) => void): Promise<string>;
+  /**
+   * Waits while the watch installs and restarts, then tries once to read its version without a
+   * click. Returns null when that isn't possible: Chrome on macOS can't find a restarted watch
+   * again until the user opens the device picker, so the page then offers verify().
+   */
+  waitForRestart(signal: AbortSignal, onStatus: (m: string) => void): Promise<string | null>;
+  /** Must be called straight from a click: opens the device picker and reads the version. */
+  verify(opts: { showAll: boolean; log: (m: string) => void }): Promise<string>;
   disconnect(): void;
 }
 
@@ -23,6 +29,9 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     const t = setTimeout(resolve, ms);
     signal?.addEventListener("abort", () => { clearTimeout(t); reject(new DOMException("Cancelled", "AbortError")); }, { once: true });
   });
+
+/** How long to wait after the transfer before checking: the watch verifies, installs and restarts. */
+const RESTART_WAIT_S = 90;
 
 /** Version bytes for FW init 2: the watch's own version; in upgrade mode it reports 0.x.y.z, use 1.x.y.z. */
 const initVersion = (v: string) => {
@@ -66,24 +75,33 @@ export class BluetoothWatch implements WatchLink {
   }
 
   async waitForRestart(signal: AbortSignal, onStatus: (m: string) => void) {
-    // Same timing as tools/patch.py: give it two minutes, then try a few times a minute apart.
-    onStatus("installing");
-    await sleep(120_000, signal);
-    for (let attempt = 1; attempt <= 5; attempt++) {
-      try {
-        onStatus(`checking the watch (try ${attempt} of 5)`);
-        const info = await this.session();
-        this.log(`after the install the watch runs ${info.firmware}`);
-        return info.firmware;
-      } catch (e) {
-        this.log(`watch not ready yet: ${e instanceof Error ? e.message : String(e)}`);
-        this.client?.disconnect();
-        await sleep(60_000, signal);
-      } finally {
-        this.client?.disconnect();
-      }
+    for (let left = RESTART_WAIT_S; left > 0; left--) {
+      onStatus(`The watch is installing and restarting. Checking it in ${left} s.`);
+      await sleep(1000, signal);
     }
-    throw new Error("couldn’t reach the watch after the install");
+    onStatus("Checking the watch…");
+    try {
+      const info = await this.session();
+      this.log(`after the install the watch runs ${info.firmware}`);
+      return info.firmware;
+    } catch (e) {
+      this.log(`couldn’t reconnect by itself (${e instanceof Error ? e.message : String(e)})`);
+      return null;
+    } finally {
+      this.client?.disconnect();
+    }
+  }
+
+  async verify({ showAll, log }: Parameters<WatchLink["verify"]>[0]) {
+    this.log = log;
+    this.client = await WatchClient.request(showAll, log);
+    try {
+      const info = await this.session();
+      this.log(`the watch runs ${info.firmware}`);
+      return info.firmware;
+    } finally {
+      this.client.disconnect();
+    }
   }
 
   disconnect() { this.client?.disconnect(); }
@@ -111,10 +129,21 @@ export class DemoWatch implements WatchLink {
     }
   }
 
+  // ?demo=noverify shows the case where the page can't reconnect by itself.
+  noVerify = new URLSearchParams(location.search).get("demo") === "noverify";
+
   async waitForRestart(signal: AbortSignal, onStatus: (m: string) => void) {
-    onStatus("installing");
-    await sleep(2600, signal);
+    for (let left = 3; left > 0; left--) {
+      onStatus(`The watch is installing and restarting. Checking it in ${left} s.`);
+      await sleep(1000, signal);
+    }
+    if (this.noVerify) return null;
     return this.firmware.startsWith("0.") ? "1.0.1.77" : this.firmware;
+  }
+
+  async verify() {
+    await sleep(1500);
+    return "1.0.1.77";
   }
 
   disconnect() {}

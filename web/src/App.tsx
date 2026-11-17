@@ -5,7 +5,7 @@ import { type BuildResult, buildImage } from "./build";
 import { type FirmwareCheck, type Release, checkFirmware, latestRelease } from "./lib/firmware";
 import { LANGUAGES, demoLanguages } from "./lib/languages";
 import { BluetoothWatch, DemoWatch, type WatchInfo, type WatchLink } from "./lib/watch";
-import { Bluetooth, Check, Code, Copy, Cross, Download, FileUp, Moon, Retry, Sun, Warn } from "./ui/icons";
+import { Bluetooth, Check, Code, Copy, Cross, Download, FileUp, Moon, Retry, Sun, Warn, WatchIcon } from "./ui/icons";
 
 type FirmwareOk = Extract<FirmwareCheck, { ok: true }>;
 // The demo file is empty, so there is nothing to build.
@@ -86,6 +86,8 @@ export default function App() {
   const [confirmStop, setConfirmStop] = useState(false);
   const [installStatus, setInstallStatus] = useState("");
   const [newFw, setNewFw] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
   const [problem, setProblem] = useState<{ title: string; body: string } | null>(null);
   const [stopped, setStopped] = useState(false);
   const [phase, setPhase] = useState<Phase | null>(null);
@@ -223,30 +225,47 @@ export default function App() {
     window.addEventListener("beforeunload", guard);
     let stage = "transfer", lastPct = 0;
     try {
-      const image = langs.length === 0 ? fwOk.file : built?.result?.image;
+      // The demo file is empty and never built, the demo only pretends to send it.
+      const image = langs.length === 0 ? fwOk.file : built?.result?.image ?? (link.simulated ? fwOk.file : undefined);
       if (!image) throw new Error("the patched image isn’t built yet");
       await link.install({ image, langs, signal: ac.signal, onProgress: (p) => { lastPct = p.pct; setPct(p.pct); setSent(p.sent); } });
       stage = "install";
       setScreen("installing");
+      setNewFw(null);
+      setVerifyError(null);
+      // The watch confirmed the whole transfer, so the install counts as done. Reading the version
+      // afterwards is a check: if the page can't reconnect by itself, the done screen offers a button.
       const v = await link.waitForRestart(ac.signal, setInstallStatus);
       setNewFw(v);
-      if (v.startsWith("0.")) {
-        setScreen("recovery");
-      } else {
-        setScreen("done");
-      }
+      setScreen(v?.startsWith("0.") ? "recovery" : "done");
     } catch (e) {
       if (ac.signal.aborted) return;
       const msg = e instanceof Error ? e.message : String(e);
       addLog(`error: ${msg}`);
       setProblem(stage === "transfer"
         ? { title: `The transfer stopped at ${lastPct}%`, body: "The watch keeps its current firmware until a transfer finishes. Move this device closer, check the watch is still on its charger, then try again." }
-        : { title: "Couldn’t reach the watch after the install", body: "Look at the watch screen. If it shows the time, it has restarted, connect again to check it. If it shows a QR code and asks to update, use the official firmware to restore it." });
+        : { title: "Something went wrong after the transfer", body: "Look at the watch screen. If it shows the time, the install worked. If it shows a QR code and asks to update, connect again and restore the official firmware." });
       setScreen("lost");
     } finally {
       setInstalling(false);
       window.removeEventListener("beforeunload", guard);
       lock?.release().catch(() => {});
+    }
+  }
+
+  async function verify() {
+    setVerifying(true);
+    setVerifyError(null);
+    try {
+      const v = await link.verify({ showAll, log: addLog });
+      setNewFw(v);
+      if (v.startsWith("0.")) setScreen("recovery");
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      addLog(`error: ${err.name}: ${err.message}`);
+      if (err.name !== "NotFoundError") setVerifyError(err.message);
+    } finally {
+      setVerifying(false);
     }
   }
 
@@ -518,17 +537,33 @@ export default function App() {
       )}
       {screen === "installing" && (
         <>
-          <p className="lede" style={{ marginBottom: 10 }}>The transfer is done. The watch is installing the update and will restart by itself. Leave it on the charger, this takes a few minutes.</p>
+          <p className="lede" style={{ marginBottom: 10 }}>The watch received everything. It now installs the update and restarts by itself. Leave it on the charger.</p>
           <div className="bar big indet"><i /></div>
-          <p className="muted" style={{ fontSize: 13, margin: 0 }}>{installStatus === "installing" ? "Waiting for the watch to restart" : installStatus ? installStatus[0].toUpperCase() + installStatus.slice(1) : ""}</p>
+          <p className="muted" style={{ fontSize: 13, margin: 0, fontVariantNumeric: "tabular-nums" }}>{installStatus}</p>
           {more([])}
         </>
       )}
       {screen === "done" && (
         <>
           <Note tone="ok" icon={<Check size={16} />} title={restoring ? "The official firmware is back on your watch" : `${listNames(chosen.map((l) => l.en))} ${chosen.length > 1 ? "are" : "is"} on your watch`}>
-            {newFw && <>The watch restarted and runs firmware {newFw}.</>}
+            {newFw ? <>The watch restarted and runs firmware {newFw}.</> : <>The watch received the whole update and installs it by itself.</>}
           </Note>
+          {!newFw && (
+            <div style={{ marginTop: 12 }}>
+              <Note icon={<WatchIcon size={16} />} title="Check the watch screen">
+                Once it shows the time, everything worked. To confirm the version from here, connect to it once more
+                (this browser needs you to pick the watch again after a restart).
+                {verifyError && <p style={{ color: "var(--err)", marginTop: 6 }}>Couldn’t connect: {verifyError}</p>}
+                {more([])}
+              </Note>
+              <div className="actions">
+                <span className="grow" />
+                <button className="btn btn-secondary" type="button" disabled={verifying} onClick={verify}>
+                  {verifying ? <><span className="spinner" />Checking…</> : <><Bluetooth size={16} />Check the watch</>}
+                </button>
+              </div>
+            </div>
+          )}
           <p style={{ margin: "20px 0 0", fontWeight: 500 }}>One more thing: pair the watch with your phone again</p>
           <ol className="ol">
             <li>Turn Bluetooth back on and open Nothing X.</li>
@@ -646,7 +681,7 @@ export default function App() {
                           </span>
                         )}
                       </div>
-                      {state === "cur" && <div className="step-body" key={screen.slice(0, 2)}>{s.body}</div>}
+                      {(state === "cur" || (screen === "done" && i === steps.length - 1)) && <div className="step-body" key={screen.slice(0, 2)}>{s.body}</div>}
                     </li>
                   );
                 })}

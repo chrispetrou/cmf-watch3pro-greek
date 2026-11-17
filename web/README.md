@@ -16,9 +16,13 @@ What's real so far:
 
 - sending the image to the watch (`WatchClient.flash`, a port of `flash_firmware` in
   `tools/cmf_client.py`), then reconnecting to check the version once the watch has restarted.
-  Tested against a simulated watch (`test/flash.test.ts`); not yet on a real one.
+  Tested against a simulated watch (`test/flash.test.ts`) and on a real watch on 1.0.1.77
+  (Greek + Georgian, then Greek + Georgian + Armenian). Chrome on macOS can't reconnect to a
+  watch that has just restarted until the user picks it again, so the page counts the install as
+  done once the watch confirms the transfer and offers a "Check the watch" button.
 
-`?demo` simulates every step instead and says so in a banner.
+`?demo` simulates every step instead and says so in a banner (`?demo=noverify` shows the case
+where the page can't reconnect after the install).
 
 Needs Chrome or Edge on a computer or Android phone (no Safari, Firefox or iPhone), and Node 22.
 
@@ -54,4 +58,4 @@ Open `http://localhost:5173/?demo` to click through every screen without a watch
 
 1. Connect, pair, read the version (done).
 2. Build the patched image in the browser (done).
-3. Flash it (written, needs testing on a watch).
+3. Flash it (done; making the upload faster is in progress).
