@@ -101,4 +101,8 @@ default). The technical log stays in English.
 - The release list is third-party data, so its download link is only shown if it points to Nothing's
   own server, and its version must look like a version number.
 - The deploy workflow gives the build job read access only. Only the deploy job can publish.
-- Dependabot opens weekly update PRs for the npm packages and the workflow's actions.
+- Dependabot opens weekly update PRs for the npm packages (minor and patch versions only) and the
+  workflow's actions. Every PR that touches `web/` or `tools/` is built and tested before merging.
+- The firmware build tests are skipped in CI because no firmware is in the repo. Before merging a
+  Pyodide update, run `npm test` locally with the official image in `firmware/`: the patched image
+  must keep the same sha256.

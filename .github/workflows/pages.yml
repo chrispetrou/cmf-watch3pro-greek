@@ -1,20 +1,23 @@
-# Builds the web app in web/ and publishes it to GitHub Pages.
-# Runs on pushes to the branches below and can be started by hand from the Actions tab.
+# Builds and tests the web app in web/. Pushes to main also publish it to GitHub Pages;
+# pull requests only build and test. Can be started by hand from the Actions tab.
 name: Deploy web app to GitHub Pages
 
 on:
   push:
     branches: [main]
     paths: ["web/**", "tools/**", ".github/workflows/pages.yml"]
+  pull_request:
+    paths: ["web/**", "tools/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 # Nothing by default; each job gets only what it needs.
 permissions: {}
 
-# One deployment at a time; a newer push replaces a queued one.
+# One deployment at a time. Each pull request gets its own group, and a newer push to it
+# cancels the older check.
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.ref) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -38,12 +41,15 @@ jobs:
       # The firmware tests skip themselves here: no firmware image is ever in the repo.
       - run: npm test
       - run: npm run build
-      - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v5
+      - if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v6
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
         with:
           path: web/dist
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     permissions:
