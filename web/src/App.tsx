@@ -2,7 +2,8 @@
 import { type DragEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
-  Bluetooth, Check, Code, Copy, Download, FileUp, Info, Moon, RotateCw, Sun, TriangleAlert, Watch as WatchIcon, X,
+  BatteryCharging, Bluetooth, Check, Clock, Code, Copy, Download, FileDown, FileUp, Info, Monitor, Moon, RotateCw, Sun, TriangleAlert,
+  Watch as WatchIcon, X,
 } from "lucide-react";
 import { Actions, Details, FileRow, Notice, Spinner } from "@/components/blocks";
 import { Badge } from "@/components/ui/badge";
@@ -113,7 +114,8 @@ export default function App() {
   const [release, setRelease] = useState<Release | null>(null);
   const [fw, setFw] = useState<FirmwareCheck | null>(null);
   const [checkPct, setCheckPct] = useState(0);
-  const [dragOver, setDragOver] = useState(false);
+  // A file dragged over the page during the firmware step: the whole page becomes the drop target.
+  const [pageDrag, setPageDrag] = useState(false);
   const [checks, setChecks] = useState([false, false, false]);
   const [showAll, setShowAll] = useState(false);
   const [watch, setWatch] = useState<WatchInfo | null>(null);
@@ -238,9 +240,24 @@ export default function App() {
   const pickFile = () => fileInput.current?.click();
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
-    setDragOver(false);
+    setPageDrag(false);
     takeFile(e.dataTransfer.files[0]);
   };
+  const acceptsDrop = screen === "fwEmpty" || screen === "fwWrong" || screen === "fwValid";
+  useEffect(() => {
+    const hasFile = (e: globalThis.DragEvent) => e.dataTransfer?.types.includes("Files");
+    const enter = (e: globalThis.DragEvent) => { if (acceptsDrop && hasFile(e)) setPageDrag(true); };
+    // A file dropped outside the overlay (or on another step) would make the browser open it and lose the page.
+    const block = (e: globalThis.DragEvent) => { if (hasFile(e)) e.preventDefault(); };
+    window.addEventListener("dragenter", enter);
+    window.addEventListener("dragover", block);
+    window.addEventListener("drop", block);
+    return () => {
+      window.removeEventListener("dragenter", enter);
+      window.removeEventListener("dragover", block);
+      window.removeEventListener("drop", block);
+    };
+  }, [acceptsDrop]);
 
   // ------------------------------------------------------------ connect
   async function connect() {
@@ -389,9 +406,7 @@ export default function App() {
         onChange={(e) => { takeFile(e.target.files?.[0]); e.target.value = ""; }} />
 
       {screen === "fwEmpty" && (
-        <div onDrop={onDrop} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
-          className={cn("rounded-xl border border-dashed border-input bg-muted px-5 py-7 text-center transition-colors",
-            dragOver && "border-brand bg-brand/5")}>
+        <div className="rounded-xl border border-dashed border-input bg-muted px-5 py-7 text-center">
           <FileUp className="mx-auto size-5.5 text-faint" />
           <p className="mt-2">
             {t.drop}{" "}
@@ -673,6 +688,16 @@ export default function App() {
           </div>
         </div>
       </header>
+      {pageDrag && acceptsDrop && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-6 backdrop-blur-sm animate-in fade-in-0 duration-150"
+          onDragOver={(e) => e.preventDefault()} onDragLeave={() => setPageDrag(false)} onDrop={onDrop}>
+          <div className="pointer-events-none flex w-full max-w-md flex-col items-center rounded-2xl border-2 border-dashed border-brand bg-background px-6 py-12 text-center">
+            <FileUp className="size-7 text-brand" />
+            <p className="mt-3 font-medium">{t.dropAnywhere}</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">{t.dropHint}</p>
+          </div>
+        </div>
+      )}
       {link.simulated && (
         <div className="border-b bg-muted px-6 py-2 text-center text-[13px] text-muted-foreground">
           <b className="font-medium text-foreground">{t.demo}</b> {t.demoBanner}
@@ -683,6 +708,14 @@ export default function App() {
         <section className="px-6 pt-14 pb-10 max-sm:px-4 max-sm:pt-8 max-sm:pb-6">
           <h1 className="max-w-[18ch] text-[clamp(28px,4vw,40px)] leading-[1.1] font-semibold tracking-[-0.035em]">{t.heroTitle}</h1>
           <p className="mt-3.5 max-w-[54ch] text-[17px] text-muted-foreground max-sm:text-[15.5px]">{t.heroText(t.heroLangs)}</p>
+          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-muted-foreground">
+            <span className="font-medium text-foreground">{t.needTitle}</span>
+            <ul className="contents">
+              {[Monitor, FileDown, BatteryCharging, Clock].map((Icon, i) => (
+                <li key={i} className="inline-flex items-center gap-1.5"><Icon className="size-3.5 text-faint" aria-hidden="true" />{t.need[i]}</li>
+              ))}
+            </ul>
+          </div>
         </section>
 
         <div className="rule" />

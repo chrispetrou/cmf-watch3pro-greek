@@ -34,8 +34,14 @@ function caption({ screen, phase, chosen, watchName, watchFw }: Props, p: String
 }
 
 function Face({ screen, phase, chosen, pct, watchFw }: Props) {
-  if (screen === "pairing" && phase !== "pairing") {
-    return <><span className="wacc"><Bluetooth className="size-6.5" /></span><span className="q" style={{ margin: "6px 0 0" }}>Connecting…</span></>;
+  // Looking for the watch or talking to it: the Bluetooth mark sends out rings.
+  if (screen === "searching" || (screen === "pairing" && phase !== "pairing")) {
+    return (
+      <>
+        <span className="wacc wping"><Bluetooth className="size-6.5" /></span>
+        <span className="q" style={{ margin: "14px 0 0" }}>{screen === "searching" && phase === null ? "Searching…" : "Connecting…"}</span>
+      </>
+    );
   }
   switch (screen) {
     case "choose":

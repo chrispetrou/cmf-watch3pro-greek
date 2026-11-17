@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { ChevronRight, LoaderCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useT } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 export type Tone = "neutral" | "ok" | "warn" | "err";
@@ -41,11 +42,12 @@ export function Notice({ tone = "neutral", icon, title, children, className }: {
 
 /** "Technical details": key/value rows and the log, folded away. */
 export function Details({ rows = [], log }: { rows?: [string, string][]; log: string[] }) {
+  const { t } = useT();
   return (
     <Collapsible className="mt-3 text-[13px]">
       <CollapsibleTrigger className="group flex items-center gap-1 rounded text-muted-foreground hover:text-foreground">
         <ChevronRight className="size-3.5 transition-transform group-data-[state=open]:rotate-90" />
-        Technical details
+        {t.details}
       </CollapsibleTrigger>
       <CollapsibleContent>
         {rows.length > 0 && (

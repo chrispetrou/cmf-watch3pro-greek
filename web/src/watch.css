@@ -47,6 +47,11 @@
 @keyframes pring-in { from { opacity: 0; transform: scale(0.97); } }
 .wspin { width: 30px; height: 30px; border-radius: 50%; border: 3px solid #262626; border-top-color: var(--brand); animation: spin 1s linear infinite; }
 .wacc { color: var(--brand); }
+.wping { position: relative; display: grid; place-items: center; }
+.wping::before, .wping::after { content: ""; position: absolute; inset: -7px; border-radius: 50%;
+  border: 1.5px solid var(--brand); opacity: 0; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+.wping::after { animation-delay: 1s; }
+@keyframes ping { 0% { transform: scale(0.6); opacity: 0.8; } 100% { transform: scale(2.4); opacity: 0; } }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 1023.98px) {
