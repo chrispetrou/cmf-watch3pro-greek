@@ -25,7 +25,7 @@ const en = {
   heroTitle: "Read your language on the CMF Watch 3 Pro",
   heroText: (langs: string) => `Adds ${langs} letters and hundreds more emoji to the watch’s own font, in your browser. Free and open source. Not affiliated with Nothing or CMF.`,
   heroLangs: "Greek, Georgian or Armenian",
-  footer: "Not affiliated with Nothing or CMF. Use at your own risk. No firmware is provided here, everything is processed on your device. Emoji: Twemoji (CC-BY 4.0) and Noto Emoji.",
+  footer: "Not affiliated with Nothing or CMF. Use at your own risk. No firmware is provided here, everything is processed on your device. Visits are counted anonymously with Cloudflare Web Analytics, without cookies. Emoji: Twemoji (CC-BY 4.0) and Noto Emoji.",
   guide: "Guide",
   license: "License",
 
@@ -223,7 +223,7 @@ const el: Strings = {
   heroTitle: "Διάβασε τη γλώσσα σου στο CMF Watch 3 Pro",
   heroText: (langs: string) => `Προσθέτει ${langs} γράμματα και εκατοντάδες ακόμη emoji στη γραμματοσειρά του ρολογιού, μέσα από τον browser σου. Δωρεάν και ανοιχτού κώδικα. Not affiliated with Nothing or CMF.`,
   heroLangs: "Ελληνικά, Γεωργιανά ή Αρμενικά",
-  footer: "Not affiliated with Nothing or CMF. Η χρήση γίνεται με δική σου ευθύνη. Δεν παρέχεται κάποιο firmware, όλα γίνονται στη συσκευή σου. Emoji: Twemoji (CC-BY 4.0) και Noto Emoji.",
+  footer: "Not affiliated with Nothing or CMF. Η χρήση γίνεται με δική σου ευθύνη. Δεν παρέχεται κάποιο firmware, όλα γίνονται στη συσκευή σου. Οι επισκέψεις μετριούνται ανώνυμα με το Cloudflare Web Analytics, χωρίς cookies. Emoji: Twemoji (CC-BY 4.0) και Noto Emoji.",
   guide: "Οδηγός",
   license: "Άδεια",
 
