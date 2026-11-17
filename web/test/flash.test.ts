@@ -6,7 +6,7 @@ import { type Bytes, CMD, type Cmd, Reassembler, UUID, buildPackets, concat, dec
 // pieces of the image like the real watch, and checks every byte it gets back.
 const KEY = new Uint8Array(16).fill(7) as Bytes;
 
-function setup(requests: [number, number][], opts: { refuseInit2?: boolean } = {}) {
+function setup(requests: [number, number][], opts: { refuseInit2?: boolean; dropFast?: number } = {}) {
   const received: { offset: number; data: Bytes }[] = [];
   const log: string[] = [];
   let finished = false;
@@ -33,9 +33,21 @@ function setup(requests: [number, number][], opts: { refuseInit2?: boolean } = {
   let pending: { offset: number; length: number; parts: Bytes[] } | null = null;
   const watchSide = new Map<string, Reassembler>();
 
+  let dropped = 0;
+  const writes = { fast: 0, confirmed: 0 };
   const fakeChar = (uuid: string) => ({
-    uuid, properties: { write: false, writeWithoutResponse: true },
+    uuid, properties: { write: true, writeWithoutResponse: true },
+    async writeValueWithResponse(pkt: Bytes) {
+      writes.confirmed++;
+      return this.receive(pkt);
+    },
     async writeValueWithoutResponse(pkt: Bytes) {
+      // Like a real radio under load: unconfirmed packets can get lost.
+      if (uuid === UUID.fwWrite && pkt[10] === 0x42 && dropped < (opts.dropFast ?? 0)) { dropped++; return; }
+      writes.fast++;
+      return this.receive(pkt);
+    },
+    async receive(pkt: Bytes) {
       const r = watchSide.get(uuid) ?? new Reassembler();
       watchSide.set(uuid, r);
       for (const p of r.feed(pkt)) {
@@ -47,8 +59,11 @@ function setup(requests: [number, number][], opts: { refuseInit2?: boolean } = {
           await reply(CMD.FW_INIT2_REPLY, new Uint8Array([opts.refuseInit2 ? 0 : 1]));
           if (!opts.refuseInit2) await nextRequest();
         } else if (sameCmd(cmd, CMD.FW_CHUNK_WRITE)) {
+          if (p.index === 1) pending!.parts = [];
           pending!.parts.push(body.slice(0, -4)); // plaintext chunks carry their CRC
           if (p.index === p.count) {
+            // An incomplete piece gets no answer, the page has to notice and send it again.
+            if (pending!.parts.length !== p.count) return;
             received.push({ offset: pending!.offset, data: concat(...pending!.parts) });
             await nextRequest();
           }
@@ -57,7 +72,8 @@ function setup(requests: [number, number][], opts: { refuseInit2?: boolean } = {
     },
   });
   for (const u of [UUID.cmdWrite, UUID.fwWrite, UUID.dataWrite]) c.chars.set(u, fakeChar(u));
-  return { client, received, isFinished: () => finished, log };
+  c.fastStallMs = 100;
+  return { client, received, isFinished: () => finished, log, writes };
 }
 
 const image = (() => {
@@ -78,6 +94,24 @@ describe("WatchClient.flash", () => {
     expect(received.map((r) => r.data.length)).toEqual(reqs.map((r) => r[1]));
     expect(isFinished()).toBe(true);
     expect(progress.at(-1)).toBe(100);
+  });
+
+  it("sends pieces without per-packet confirmations", async () => {
+    const { client, writes } = setup([[0, 3900], [8000, 3900]]);
+    await client.flash(image, [1, 0, 1, 77], () => {});
+    expect(writes.fast).toBeGreaterThan(40);
+  });
+
+  it("falls back to confirmed packets when fast packets get lost", async () => {
+    const reqs: [number, number][] = [[0, 3900], [5000, 3900], [12000, 3900]];
+    const { client, received, isFinished, log, writes } = setup(reqs, { dropFast: 3 });
+    await client.flash(image, [1, 0, 1, 77], () => {});
+    expect(log.some((l) => l.includes("went quiet"))).toBe(true);
+    expect(isFinished()).toBe(true);
+    // the dropped piece arrives in full the second time; every piece matches the image
+    expect(received.map((r) => r.offset)).toEqual(reqs.map((r) => r[0]));
+    for (const r of received) expect(r.data).toEqual(image.slice(r.offset, r.offset + 3900));
+    expect(writes.confirmed).toBeGreaterThan(0);
   });
 
   it("stops if the watch refuses", async () => {

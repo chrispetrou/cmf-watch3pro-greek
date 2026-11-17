@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { loadPyodide } from "pyodide";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 // Runs src/build/glue.py in Pyodide on the official image and checks the result is
 // byte-identical to the CLI build. Needs the image in firmware/ (git-ignored).
@@ -15,14 +15,20 @@ const SHA = {
   "armenian,georgian,greek": "7a9104e4a62eeefba776fed7addbcc7a29845aa11dfb0e49084aca133f6c8479",
 };
 
-describe.skipIf(!have)("in-browser build (Pyodide)", async () => {
-  const py = await loadPyodide();
-  py.FS.mkdirTree("/app");
-  for (const f of readdirSync("../tools").filter((n) => n.endsWith(".py"))) py.FS.writeFile(`/app/${f}`, readFileSync(`../tools/${f}`, "utf8"));
-  py.FS.writeFile("/app/glue.py", readFileSync("src/build/glue.py", "utf8"));
-  py.runPython("import sys; sys.path.insert(0, '/app')");
-  const run = py.pyimport("glue").run;
-  const orig = new Uint8Array(readFileSync(IMAGE));
+describe.skipIf(!have)("in-browser build (Pyodide)", () => {
+  // Vitest still runs a skipped describe's body, so the setup lives in beforeAll.
+  let run: (...args: unknown[]) => { toJs: () => unknown };
+  let orig: Uint8Array;
+  let py: Awaited<ReturnType<typeof loadPyodide>>;
+  beforeAll(async () => {
+    py = await loadPyodide();
+    py.FS.mkdirTree("/app");
+    for (const f of readdirSync("../tools").filter((n) => n.endsWith(".py"))) py.FS.writeFile(`/app/${f}`, readFileSync(`../tools/${f}`, "utf8"));
+    py.FS.writeFile("/app/glue.py", readFileSync("src/build/glue.py", "utf8"));
+    py.runPython("import sys; sys.path.insert(0, '/app')");
+    run = py.pyimport("glue").run;
+    orig = new Uint8Array(readFileSync(IMAGE));
+  }, 60000);
 
   for (const [langs, sha] of Object.entries(SHA)) {
     it(`matches the CLI for ${langs}`, () => {
