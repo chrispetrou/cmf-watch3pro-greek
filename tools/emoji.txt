@@ -454,3 +454,7 @@
 1F45F  👟
 1F443  👃
 1F6CC  🛌
+
+# Added by hand: seasonal ones that rank lower in the 2019 data.
+1F384  🎄
+1F385  🎅

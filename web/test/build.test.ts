@@ -14,9 +14,9 @@ const SHA = {
   armenian: "ecf7f25902fc60ddb78943ba9f180a5112fe896870e256f6071beb0c00ada6a8",
   "armenian,georgian,greek": "7a9104e4a62eeefba776fed7addbcc7a29845aa11dfb0e49084aca133f6c8479",
   // with the emoji option (tools/build_firmware.py --emoji)
-  emoji: "8e328b9505bfdc0bf0694c1efa7113757e87c2b7fcabaa2e4dfd20dcc31fa9b0",
-  "greek,emoji": "e9bf8efba6b13b9af9292d077cdbcb66263f70dd221d68ac57cb51f906ffe9ca",
-  "armenian,georgian,greek,emoji": "99544108611214944ad46a3f34af648879b540895079f447e5c5f928e4f4b833",
+  emoji: "65927e82a2d3de4943874088f5b573b84a55213c737270d5df378bd2320a1d95",
+  "greek,emoji": "c1af5a56f14ac86ffd2af5d627b8ebead5b6386033a10147777cdfe2a3ac41fe",
+  "armenian,georgian,greek,emoji": "3aede6186841ed402c3f5e53ea53da3f9f7b6518a53555dd98a37f51a0d02846",
 };
 
 describe.skipIf(!have)("in-browser build (Pyodide)", () => {

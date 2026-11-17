@@ -87,7 +87,7 @@ The stock advance is 33 (30 px plus spacing); 0 makes an entry take no space, wh
 
 The pixel format was worked out by fitting the stored bits against the Twemoji PNGs: a least-squares fit put 6 bits of blue in bits 0-5 and 6 bits of green in bits 6-11, which left red in 12-17 and alpha in 18-23. Read as RGB565 plus an alpha byte, the shapes are right but the colours are wrong.
 
-Which font draws a character depends on the codepoint: high codepoints go to `emoji28.font`, lower ones to `sans36.font`. So ❤ (U+2764), ✅ (U+2705) and the flag letters (U+1F1E6 to U+1F1FF) can only be added to the text font, which is 2 bpp and has no colour. In the tests U+1F1E6 to U+1F1FF went to the text font and U+1F389 and up to the emoji font. The tools assume the split is at U+1F300, the start of the Miscellaneous Symbols and Pictographs block, and a test with 🌈 (U+1F308) and 🌹 (U+1F339) confirms it [to be checked]. The code in the app that makes this choice hasn't been found.
+Which font draws a character depends on the codepoint: high codepoints go to `emoji28.font`, lower ones to `sans36.font`. So ❤ (U+2764), ✅ (U+2705) and the flag letters (U+1F1E6 to U+1F1FF) can only be added to the text font, which is 2 bpp and has no colour. In the tests U+1F1E6 to U+1F1FF went to the text font and U+1F389 and up to the emoji font. The tools assume the split is at U+1F300, the start of the Miscellaneous Symbols and Pictographs block, and a test confirmed it: 🌈 (U+1F308), 🌹 (U+1F339), 🌸 (U+1F338), 🎁 (U+1F381) and 🎂 (U+1F382) all showed in colour once added to the emoji font. The code in the app that makes this choice hasn't been found.
 
 ## Checksums: how they were worked out
 
