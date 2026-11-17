@@ -39,16 +39,17 @@ export class BluetoothWatch implements WatchLink {
     this.client?.disconnect();
     this.log = log;
     this.client = await WatchClient.request(showAll, log);
-    this.client.onPhase = onPhase;
     try {
-      return await this.session();
+      return await this.session(onPhase);
     } finally {
       this.client.disconnect(); // nothing stays connected until the install starts
     }
   }
 
-  private async session(): Promise<WatchInfo> {
+  /** Connect if needed, log in and read the version. Phases are reported only during the connect step. */
+  private async session(onPhase?: (p: Phase) => void): Promise<WatchInfo> {
     const c = this.client!;
+    c.onPhase = onPhase;
     if (!c.connected) await c.connect();
     await c.authenticate();
     return { name: c.name, firmware: await c.firmwareVersion() };
@@ -98,6 +99,8 @@ export class DemoWatch implements WatchLink {
     await sleep(1800);
     onPhase("pairing");
     await sleep(2200);
+    onPhase("reading");
+    await sleep(400);
     return { name: "CMF Watch 3 Pro-4F2A", firmware: this.firmware };
   }
 

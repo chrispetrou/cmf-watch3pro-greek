@@ -1,6 +1,6 @@
 // Watch Languages: choose languages, add the official firmware, connect, install.
 import { type DragEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { webBluetoothAvailable } from "./ble/client";
+import { type Phase, webBluetoothAvailable } from "./ble/client";
 import { type BuildResult, buildImage } from "./build";
 import { type FirmwareCheck, type Release, checkFirmware, latestRelease } from "./lib/firmware";
 import { LANGUAGES, demoLanguages } from "./lib/languages";
@@ -39,6 +39,14 @@ const cmpVersion = (a: string, b: string) => {
   const x = a.split(".").map(Number), y = b.split(".").map(Number);
   for (let i = 0; i < 4; i++) if (x[i] !== y[i]) return x[i] - y[i];
   return 0;
+};
+
+const PHASE_TEXT: Record<Phase | "picker", [string, string]> = {
+  picker: ["Looking for your watch", ""],
+  connecting: ["Connecting to the watch", "This takes a few seconds."],
+  key: ["Logging in to the watch", "Using the pairing saved in this browser. If the watch or this device asks to allow the connection, accept it."],
+  pairing: ["Pairing with the watch", "Accept the request if the watch or this device asks. This is needed the first time, or when the saved pairing no longer works."],
+  reading: ["Reading the watch’s version", "Almost done."],
 };
 
 function eta(startedAt: number, pct: number) {
@@ -80,6 +88,9 @@ export default function App() {
   const [newFw, setNewFw] = useState<string | null>(null);
   const [problem, setProblem] = useState<{ title: string; body: string } | null>(null);
   const [stopped, setStopped] = useState(false);
+  const [phase, setPhase] = useState<Phase | null>(null);
+  // True from "Start install" until the result is known, whatever screen is showing.
+  const [installing, setInstalling] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const [built, setBuilt] = useState<Built | null>(null);
@@ -105,7 +116,7 @@ export default function App() {
   const dark = theme ? theme === "dark" : systemDark();
   const chosen = LANGS.filter((l) => sel[l.id]);
   const cur = STEP[screen];
-  const busy = screen === "transfer" || screen === "installing";
+  const busy = installing || screen === "transfer" || screen === "installing";
   const fwOk = fw?.ok ? fw : null;
   const expected = release?.version ?? "1.0.1.77";
   const ready = checks.filter(Boolean).length;
@@ -163,13 +174,14 @@ export default function App() {
   async function connect() {
     setConnError(null);
     setStopped(false);
+    setPhase(null);
     setLog([]);
     setScreen("searching");
     try {
       const info = await link.connect({
         showAll,
         log: addLog,
-        onPhase: (p) => setScreen(p === "pairing" ? "pairing" : "searching"),
+        onPhase: (p) => { setPhase(p); setScreen(p === "connecting" ? "searching" : "pairing"); },
       });
       addLog(`watch ${info.name} runs ${info.firmware}`);
       setWatch(info);
@@ -202,6 +214,7 @@ export default function App() {
     setConfirmStop(false);
     setProblem(null);
     setStopped(false);
+    setInstalling(true);
     setScreen("transfer");
     // Keep the screen on and warn before the tab is closed while the watch depends on it.
     let lock: WakeLockSentinel | null = null;
@@ -231,6 +244,7 @@ export default function App() {
         : { title: "Couldn’t reach the watch after the install", body: "Look at the watch screen. If it shows the time, it has restarted, connect again to check it. If it shows a QR code and asks to update, use the official firmware to restore it." });
       setScreen("lost");
     } finally {
+      setInstalling(false);
       window.removeEventListener("beforeunload", guard);
       lock?.release().catch(() => {});
     }
@@ -436,10 +450,10 @@ export default function App() {
       )}
       {(screen === "searching" || screen === "pairing") && (
         <>
-          <Note icon={<span className="spinner" />} title={screen === "searching" ? "Looking for your watch" : "Waiting for your watch"}>
-            {screen === "searching"
+          <Note icon={<span className="spinner" />} title={PHASE_TEXT[phase ?? "picker"][0]}>
+            {phase === null
               ? <>Pick <b>CMF Watch 3 Pro</b> in the browser’s list, then press Pair.</>
-              : "If the watch or this device asks to allow the connection, accept it."}
+              : PHASE_TEXT[phase][1]}
             {more([["Mode", DEMO !== null ? "Demo" : "Web Bluetooth"]])}
           </Note>
           <div className="actions"><span className="grow" /><button className="btn btn-secondary" type="button" onClick={cancelConnect}>Cancel</button></div>
@@ -608,7 +622,7 @@ export default function App() {
       <div className="frame">
         <section className="hero">
           <h1>Read your language on the CMF Watch 3 Pro</h1>
-          <p>Adds Greek or Georgian letters to the watch’s own font, in your browser. Free, open source, and not affiliated with Nothing.</p>
+          <p>Adds Greek, Georgian or Armenian letters to the watch’s own font, in your browser. Free, open source, and not affiliated with Nothing.</p>
         </section>
 
         <div className="rule" />
@@ -640,7 +654,7 @@ export default function App() {
             )}
           </section>
           <aside className="aside">
-            <WatchPanel screen={screen} chosen={chosen} pct={pct} watchName={watch?.name ?? null} watchFw={watch?.firmware ?? null} />
+            <WatchPanel screen={screen} phase={phase} chosen={chosen} pct={pct} watchName={watch?.name ?? null} watchFw={watch?.firmware ?? null} />
           </aside>
         </main>
         <div className="rule" />

@@ -34,7 +34,8 @@ export function forgetKey() {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export type Phase = "connecting" | "pairing";
+/** connecting: GATT connect; key: logging in with the saved key; pairing: pairing from scratch; reading: asking for the version. */
+export type Phase = "connecting" | "key" | "pairing" | "reading";
 
 export class WatchClient {
   /** Called when the watch or the computer may show a prompt the user has to accept. */
@@ -53,6 +54,10 @@ export class WatchClient {
   // Web Bluetooth doesn't expose the MTU. 180 is what cmf_client.py starts with, and every
   // command used here fits in one packet well below that.
   private maxWrite = 180;
+  // Firmware pieces go out in bigger packets when the characteristic takes write-with-response:
+  // the browser then splits values up to 512 bytes itself (a "long write"). If the watch or the
+  // browser refuses that, flash() drops back to maxWrite.
+  private fwMaxWrite = 180;
 
   constructor(readonly device: BluetoothDevice, private log: Log) {
     device.addEventListener("gattserverdisconnected", () => {
@@ -86,6 +91,10 @@ export class WatchClient {
       this.log(`  service ${svc.uuid}`);
     }
     for (const u of WRITE_CHARS) if (!this.chars.has(u)) throw new Error(`characteristic ${u} not found`);
+    const fw = this.chars.get(UUID.fwWrite)!;
+    const props = (["write", "writeWithoutResponse", "notify"] as const).filter((p) => fw.properties[p]);
+    this.log(`  firmware characteristic: ${props.join(", ")}`);
+    this.fwMaxWrite = fw.properties.write ? 512 : this.maxWrite;
 
     const ffd2 = this.chars.get(UUID.ffd2);
     if (ffd2) {
@@ -202,6 +211,7 @@ export class WatchClient {
     const stored = loadKey();
     if (stored) {
       this.log("trying the stored pairing key");
+      this.onPhase?.("key");
       if (await this.tryHandshake(stored)) return;
       this.log("stored key rejected, pairing again");
       await this.reconnect();
@@ -215,6 +225,7 @@ export class WatchClient {
 
   private async freshPair() {
     this.log("pairing: asking the watch for its secret");
+    this.onPhase?.("pairing");
     this.shell = [];
     const reply = new Promise<Bytes>((resolve, reject) => {
       this.shellWaiter = resolve;
@@ -241,7 +252,6 @@ export class WatchClient {
       this.key = secret;
       await this.sendCmd(CMD.AUTH_PHONE_NAME, concat(new Uint8Array([A5]), ascii("WebFlasher")));
       this.log("if a pairing prompt appears on the computer or the watch, accept it");
-      this.onPhase?.("pairing");
       await this.expect([CMD.AUTH_WATCH_MAC], 75000);
       await this.sendCmd(CMD.AUTH_NONCE_REQUEST);
       const nonce = await this.expect([CMD.AUTH_NONCE_REPLY]);
@@ -278,7 +288,8 @@ export class WatchClient {
       if (r[0] !== 0x01) throw new Error(`the watch refused the update (init 2: ${hex(r)})`);
 
       this.log("uploading, the watch asks for each piece");
-      let sent = 0, last = -1;
+      let sent = 0, last = -1, lastLog = -10;
+      const t0 = performance.now();
       for (;;) {
         if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
         const m = await this.expectMsg([CMD.FW_CHUNK_REQUEST, CMD.FW_FINISH_ACK1], 60000);
@@ -293,11 +304,16 @@ export class WatchClient {
         const offset = v.getUint32(0), length = v.getUint32(4);
         const progress = m.body.length > 8 ? m.body[8] : 0;
         if (offset + length > image.length) throw new Error(`the watch asked for bytes past the end of the image (${offset}+${length})`);
-        await this.write(UUID.fwWrite, CMD.FW_CHUNK_WRITE, image.slice(offset, offset + length));
+        await this.sendPiece(image.slice(offset, offset + length));
         sent += length;
         if (progress !== last) {
           last = progress;
           onProgress(progress, sent);
+          if (progress - lastLog >= 10) {
+            lastLog = progress;
+            const s = (performance.now() - t0) / 1000;
+            this.log(`  ${progress}%: ${(sent / 1e6).toFixed(1)} MB in ${Math.round(s)} s, ${(sent / 1024 / s).toFixed(1)} KB/s, ${this.fwMaxWrite}-byte packets`);
+          }
         }
       }
     } catch (e) {
@@ -308,7 +324,27 @@ export class WatchClient {
     }
   }
 
+  /** One requested piece of the image, in packets as big as the firmware characteristic allows. */
+  private async sendPiece(data: Bytes) {
+    const ch = this.chars.get(UUID.fwWrite)!;
+    const send = async (size: number) => {
+      for (const pkt of await buildPackets(CMD.FW_CHUNK_WRITE, data, this.key, size)) {
+        if (ch.properties.write) await ch.writeValueWithResponse(pkt);
+        else await ch.writeValueWithoutResponse(pkt);
+      }
+    };
+    try {
+      await send(this.fwMaxWrite);
+    } catch (e) {
+      if (this.fwMaxWrite <= this.maxWrite || !this.connected) throw e;
+      this.log(`  ${this.fwMaxWrite}-byte packets refused (${e instanceof Error ? e.message : String(e)}), using ${this.maxWrite}`);
+      this.fwMaxWrite = this.maxWrite;
+      await send(this.fwMaxWrite);
+    }
+  }
+
   async firmwareVersion() {
+    this.onPhase?.("reading");
     await this.sendCmd(CMD.FIRMWARE_VERSION_GET);
     const body = await this.expect([CMD.FIRMWARE_VERSION_RET], 10000);
     return Array.from(body).join(".");

@@ -1,17 +1,21 @@
+import type { Phase } from "../ble/client";
 import type { Language } from "../lib/languages";
 import { Bluetooth, BluetoothOff, Check, Cross, Restore } from "./icons";
 import type { Screen } from "./screens";
 
-type Props = { screen: Screen; chosen: Language[]; pct: number; watchName: string | null; watchFw: string | null };
+type Props = { screen: Screen; phase: Phase | null; chosen: Language[]; pct: number; watchName: string | null; watchFw: string | null };
 
 type Caption = { s: string; tone: "" | "on" | "ok" | "warn" | "err"; sub: string };
 
-function caption({ screen, chosen, watchName, watchFw }: Props): Caption {
+function caption({ screen, phase, chosen, watchName, watchFw }: Props): Caption {
   switch (screen) {
     case "choose":
       return { s: "Live preview", tone: "on", sub: chosen.length ? "Set in Inter, the watch’s own typeface." : "Pick a language to see it here." };
-    case "searching": return { s: "Searching", tone: "on", sub: "Keep the watch close to this device." };
-    case "pairing": return { s: "Pairing", tone: "on", sub: "Accept the request if one appears." };
+    case "searching": return { s: phase === "connecting" ? "Connecting" : "Searching", tone: "on", sub: "Keep the watch close to this device." };
+    case "pairing":
+      return phase === "pairing"
+        ? { s: "Pairing", tone: "on", sub: "Accept the request if one appears." }
+        : { s: "Connecting", tone: "on", sub: phase === "reading" ? "Reading the firmware version." : "Logging in with the saved pairing." };
     case "connected": return { s: "Connected", tone: "ok", sub: watchName ?? "" };
     case "mismatch": return { s: "Connected", tone: "warn", sub: `This watch has firmware ${watchFw}.` };
     case "transfer": return { s: "Receiving", tone: "on", sub: "Leave it on the charger." };
@@ -24,7 +28,10 @@ function caption({ screen, chosen, watchName, watchFw }: Props): Caption {
   }
 }
 
-function Face({ screen, chosen, pct, watchFw }: Props) {
+function Face({ screen, phase, chosen, pct, watchFw }: Props) {
+  if (screen === "pairing" && phase !== "pairing") {
+    return <><span className="wacc"><Bluetooth size={26} /></span><span className="q" style={{ margin: "6px 0 0" }}>Connecting…</span></>;
+  }
   switch (screen) {
     case "choose":
       return chosen.length === 0 ? (

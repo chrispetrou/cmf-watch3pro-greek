@@ -15,11 +15,13 @@ export const LANGUAGES: Language[] = [
     sender: "Μαρία", msg: "Φτάνω σε 10 λεπτά, κράτα μου θέση!", date: "Δευτέρα 16 Νοε" },
   { id: "georgian", code: "ka", name: "ქართული", en: "Georgian", tested: false,
     sender: "ნინო", msg: "ხვალ 10 საათზე შევხვდეთ?", date: "ორშაბათი, 16 ნოემბერი" },
+  { id: "armenian", code: "hy", name: "Հայերեն", en: "Armenian", tested: false,
+    sender: "Արամ", msg: "Շնորհակալություն, երեկոյան կզանգեմ։", date: "Երկուշաբթի, 16 նոյեմբերի" },
 ];
 
 // ?demo=many: placeholder entries to check that the picker scales. They can't be built.
 const PLACEHOLDERS: [string, string, string][] = [
-  ["hy", "Հայերեն", "Armenian"], ["uk", "Українська", "Ukrainian"], ["bg", "Български", "Bulgarian"],
+  ["uk", "Українська", "Ukrainian"], ["bg", "Български", "Bulgarian"],
   ["sr", "Српски", "Serbian"], ["vi", "Tiếng Việt", "Vietnamese"], ["mn", "Монгол", "Mongolian"],
   ["kk", "Қазақша", "Kazakh"], ["is", "Íslenska", "Icelandic"], ["ro", "Română", "Romanian"],
 ];
