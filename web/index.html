@@ -3,12 +3,56 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Watch Languages</title>
-    <meta name="description" content="Add Greek, Georgian or Armenian letters to the CMF Watch 3 Pro, in your browser. Free and open source. Not affiliated with Nothing or CMF." />
+    <title>Watch Languages: Greek, Georgian and Armenian on the CMF Watch 3 Pro</title>
+    <meta name="description" content="Add Greek, Georgian or Armenian letters to the CMF Watch 3 Pro font, right in your browser. Free and open source. Not affiliated with Nothing or CMF." />
+    <link rel="canonical" href="https://watchlanguages.app/" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Watch Languages" />
+    <meta property="og:url" content="https://watchlanguages.app/" />
+    <meta property="og:title" content="Read your language on the CMF Watch 3 Pro" />
+    <meta property="og:description" content="Greek, Georgian and Armenian, added to the watch's own font in your browser. Free and open source." />
+    <meta property="og:image" content="https://watchlanguages.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A CMF Watch 3 Pro showing notifications in Greek and Georgian" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="el_GR" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Watch Languages",
+        "url": "https://watchlanguages.app/",
+        "description": "Adds Greek, Georgian or Armenian letters to the CMF Watch 3 Pro font and installs it over Web Bluetooth, in the browser.",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any (Chrome or Edge with Web Bluetooth)",
+        "browserRequirements": "Requires Web Bluetooth",
+        "inLanguage": ["en", "el"],
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+        "codeRepository": "https://github.com/chrispetrou/cmf-watch3pro-languages"
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Shown until the app starts, and what crawlers that don't run JavaScript read. -->
+    <div id="root">
+      <main>
+        <h1>Read your language on the CMF Watch 3 Pro</h1>
+        <p>Adds Greek, Georgian or Armenian letters to the watch's own font, in your browser. Free and open source. Not affiliated with Nothing or CMF.</p>
+        <p>Choose your languages, add the official firmware from Nothing, connect the watch over Bluetooth and install. The firmware file never leaves your computer. Works in Chrome or Edge on a computer or Android phone.</p>
+        <p lang="el">Ελληνικά, γεωργιανά και αρμενικά στο CMF Watch 3 Pro, απευθείας από τον browser.</p>
+        <p><a href="https://github.com/chrispetrou/cmf-watch3pro-languages">Source code and guide on GitHub</a></p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
