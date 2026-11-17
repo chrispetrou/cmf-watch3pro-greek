@@ -4,6 +4,7 @@ export type Language = {
   code: string; // BCP 47, for the lang attribute
   name: string; // native name
   en: string;
+  el?: string; // the name in Greek, for the Greek page
   tested: boolean; // flashed and checked on a real watch
   sender: string;
   msg: string;
@@ -11,11 +12,11 @@ export type Language = {
 };
 
 export const LANGUAGES: Language[] = [
-  { id: "greek", code: "el", name: "Ελληνικά", en: "Greek", tested: true,
+  { id: "greek", code: "el", name: "Ελληνικά", en: "Greek", el: "Ελληνικά", tested: true,
     sender: "Μαρία", msg: "Φτάνω σε 10 λεπτά, κράτα μου θέση!", date: "Δευτέρα 16 Νοε" },
-  { id: "georgian", code: "ka", name: "ქართული", en: "Georgian", tested: true,
+  { id: "georgian", code: "ka", name: "ქართული", en: "Georgian", el: "Γεωργιανά", tested: true,
     sender: "ნინო", msg: "ხვალ 10 საათზე შევხვდეთ?", date: "ორშაბათი, 16 ნოემბერი" },
-  { id: "armenian", code: "hy", name: "Հայերեն", en: "Armenian", tested: true,
+  { id: "armenian", code: "hy", name: "Հայերեն", en: "Armenian", el: "Αρμενικά", tested: true,
     sender: "Արամ", msg: "Շնորհակալություն, երեկոյան կզանգեմ։", date: "Երկուշաբթի, 16 նոյեմբերի" },
 ];
 

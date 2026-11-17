@@ -1,36 +1,40 @@
-import type { Phase } from "../ble/client";
-import type { Language } from "../lib/languages";
-import { Bluetooth, BluetoothOff, Check, Cross, Restore } from "./icons";
+import { ArrowDownToLine, Bluetooth, BluetoothOff, Check, X } from "lucide-react";
+import type { Phase } from "@/ble/client";
+import type { Language } from "@/lib/languages";
+import { cn } from "@/lib/utils";
+import { type Strings, useT } from "@/i18n";
 import type { Screen } from "./screens";
 
 type Props = { screen: Screen; phase: Phase | null; chosen: Language[]; pct: number; watchName: string | null; watchFw: string | null };
 
 type Caption = { s: string; tone: "" | "on" | "ok" | "warn" | "err"; sub: string };
 
-function caption({ screen, phase, chosen, watchName, watchFw }: Props): Caption {
+const DOT: Record<Caption["tone"], string> = { "": "bg-faint", on: "bg-brand", ok: "bg-ok", warn: "bg-warn", err: "bg-err" };
+
+function caption({ screen, phase, chosen, watchName, watchFw }: Props, p: Strings["panel"]): Caption {
   switch (screen) {
     case "choose":
-      return { s: "Live preview", tone: "on", sub: chosen.length ? "Set in Inter, the watch’s own typeface." : "Pick a language to see it here." };
-    case "searching": return { s: phase === "connecting" ? "Connecting" : "Searching", tone: "on", sub: "Keep the watch close to this device." };
+      return { s: p.livePreview, tone: "on", sub: chosen.length ? p.livePreviewSub : p.pickToSee };
+    case "searching": return { s: phase === "connecting" ? p.connecting : p.searching, tone: "on", sub: p.keepClose };
     case "pairing":
       return phase === "pairing"
-        ? { s: "Pairing", tone: "on", sub: "Accept the request if one appears." }
-        : { s: "Connecting", tone: "on", sub: phase === "reading" ? "Reading the firmware version." : "Logging in with the saved pairing." };
-    case "connected": return { s: "Connected", tone: "ok", sub: watchName ?? "" };
-    case "mismatch": return { s: "Connected", tone: "warn", sub: `This watch has firmware ${watchFw}.` };
-    case "transfer": return { s: "Receiving", tone: "on", sub: "Leave it on the charger." };
-    case "installing": return { s: "Installing", tone: "on", sub: "The screen may go dark for a moment." };
-    case "done": return { s: "Ready", tone: "ok", sub: "Pair it with Nothing X again to finish." };
-    case "recovery": return { s: "Recovery mode", tone: "warn", sub: "Waiting for the official firmware." };
-    case "lost": return { s: "Disconnected", tone: "err", sub: "Bring this device closer to the watch." };
-    case "unsupported": return { s: "Not connected", tone: "", sub: "The watch is fine. Only the browser needs to change." };
-    default: return { s: "Not connected", tone: "", sub: "Nothing changes on the watch until you install." };
+        ? { s: p.pairing, tone: "on", sub: p.acceptRequest }
+        : { s: p.connecting, tone: "on", sub: phase === "reading" ? p.reading : p.loggingIn };
+    case "connected": return { s: p.connected, tone: "ok", sub: watchName ?? "" };
+    case "mismatch": return { s: p.connected, tone: "warn", sub: p.hasFw(watchFw ?? "") };
+    case "transfer": return { s: p.receiving, tone: "on", sub: p.onCharger };
+    case "installing": return { s: p.installing, tone: "on", sub: p.mayGoDark };
+    case "done": return { s: p.ready, tone: "ok", sub: p.pairToFinish };
+    case "recovery": return { s: p.recovery, tone: "warn", sub: p.waitingOfficial };
+    case "lost": return { s: p.disconnected, tone: "err", sub: p.bringCloser };
+    case "unsupported": return { s: p.notConnected, tone: "", sub: p.browserOnly };
+    default: return { s: p.notConnected, tone: "", sub: p.nothingChanges };
   }
 }
 
 function Face({ screen, phase, chosen, pct, watchFw }: Props) {
   if (screen === "pairing" && phase !== "pairing") {
-    return <><span className="wacc"><Bluetooth size={26} /></span><span className="q" style={{ margin: "6px 0 0" }}>Connecting…</span></>;
+    return <><span className="wacc"><Bluetooth className="size-6.5" /></span><span className="q" style={{ margin: "6px 0 0" }}>Connecting…</span></>;
   }
   switch (screen) {
     case "choose":
@@ -51,12 +55,12 @@ function Face({ screen, phase, chosen, pct, watchFw }: Props) {
         <>
           <span className="small" style={{ marginTop: 0 }}>Pairing request</span>
           <span className="q">Allow this device to connect?</span>
-          <span className="wbtns"><i><Cross size={16} /></i><i className="y"><Check size={16} /></i></span>
+          <span className="wbtns"><i><X className="size-4" /></i><i className="y"><Check className="size-4" /></i></span>
         </>
       );
     case "connected":
     case "mismatch":
-      return <><span className="wacc"><Bluetooth size={26} /></span><span className="q" style={{ margin: "6px 0 0" }}>Connected</span><span className="small">FW {watchFw}</span></>;
+      return <><span className="wacc"><Bluetooth className="size-6.5" /></span><span className="q" style={{ margin: "6px 0 0" }}>Connected</span><span className="small">FW {watchFw}</span></>;
     case "transfer":
       return <><span className="small" style={{ marginTop: 0 }}>Receiving</span><span className="big" style={{ fontSize: 34, marginTop: 4 }}>{pct}%</span><span className="wbar"><i style={{ width: `${pct}%` }} /></span></>;
     case "installing":
@@ -66,18 +70,19 @@ function Face({ screen, phase, chosen, pct, watchFw }: Props) {
       return <><span className="big">10:42</span><span className="small" lang={first?.code}>{first?.date ?? "Mon 16 Nov"}</span></>;
     }
     case "recovery":
-      return <><span className="wacc"><Restore size={26} /></span><span className="q" style={{ margin: "6px 0 0" }}>Recovery</span></>;
+      return <><span className="wacc"><ArrowDownToLine className="size-6.5" /></span><span className="q" style={{ margin: "6px 0 0" }}>Recovery</span></>;
     case "lost":
-      return <><BluetoothOff size={26} /><span className="q" style={{ margin: "6px 0 0" }}>Disconnected</span><span className="small">{pct}% received</span></>;
+      return <><BluetoothOff className="size-6.5" /><span className="q" style={{ margin: "6px 0 0" }}>Disconnected</span><span className="small">{pct}% received</span></>;
     default:
       return <><span className="big">10:42</span><span className="small">Mon 16 Nov</span></>;
   }
 }
 
 export function WatchPanel(props: Props) {
-  const c = caption(props);
+  const { t } = useT();
+  const c = caption(props, t.panel);
   return (
-    <div className="aside-in" aria-label="Your watch">
+    <div className="sticky top-14 flex flex-col items-center px-6 py-8 max-lg:static max-lg:px-4 max-lg:pt-2 max-lg:pb-5" aria-label="Your watch">
       <div className="stage">
         <div className="watch" aria-hidden="true">
           <span className="strap t" /><span className="strap b" />
@@ -85,9 +90,9 @@ export function WatchPanel(props: Props) {
           <span className="case"><span className="bezel"><span className="screen"><Face {...props} /></span></span></span>
         </div>
       </div>
-      <div className="caption" aria-live="polite">
-        <span className={`s ${c.tone}`}><i />{c.s}</span>
-        <p>{c.sub}</p>
+      <div className="mt-4.5 max-w-[30ch] text-center max-lg:mt-1.5" aria-live="polite">
+        <span className="inline-flex items-center gap-1.5 text-[13px] font-medium"><i className={cn("size-1.5 rounded-full", DOT[c.tone])} />{c.s}</span>
+        <p className="mt-1 text-[13px] text-muted-foreground">{c.sub}</p>
       </div>
     </div>
   );

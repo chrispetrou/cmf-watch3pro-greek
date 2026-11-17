@@ -1,23 +1,33 @@
 // Watch Languages: choose languages, add the official firmware, connect, install.
 import { type DragEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { type Phase, webBluetoothAvailable } from "./ble/client";
-import { type BuildResult, buildImage } from "./build";
-import { type FirmwareCheck, type Release, checkFirmware, latestRelease } from "./lib/firmware";
-import { LANGUAGES, demoLanguages } from "./lib/languages";
-import { BluetoothWatch, DemoWatch, type WatchInfo, type WatchLink } from "./lib/watch";
-import { Bluetooth, Check, Code, Copy, Cross, Download, FileUp, Moon, Retry, Sun, Warn, WatchIcon } from "./ui/icons";
+import {
+  Bluetooth, Check, Code, Copy, Download, FileUp, Moon, RotateCw, Sun, TriangleAlert, Watch as WatchIcon, X,
+} from "lucide-react";
+import { Actions, Details, FileRow, Notice, Spinner } from "@/components/blocks";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { type Phase, webBluetoothAvailable } from "@/ble/client";
+import { type BuildResult, buildImage } from "@/build";
+import { I18n, STRINGS, UI_LANGS, type UiLang, storedUiLang } from "@/i18n";
+import { type FirmwareCheck, type Release, checkFirmware, latestRelease } from "@/lib/firmware";
+import { LANGUAGES, type Language, demoLanguages } from "@/lib/languages";
+import { cn } from "@/lib/utils";
+import { BluetoothWatch, DemoWatch, type WatchInfo, type WatchLink } from "@/lib/watch";
+import { LanguagePicker } from "@/ui/LanguagePicker";
+import { STEP, type Screen } from "@/ui/screens";
+import { WatchPanel } from "@/ui/WatchPanel";
 
 type FirmwareOk = Extract<FirmwareCheck, { ok: true }>;
 // The demo file is empty, so there is nothing to build.
 type Built = { key: string; result: BuildResult | null };
 const buildKey = (f: File, langs: string[]) => `${f.name}:${f.size}:${f.lastModified}|${langs.join(",")}`;
-import { STEP, type Screen } from "./ui/screens";
-import { LanguagePicker } from "./ui/LanguagePicker";
-import { WatchPanel } from "./ui/WatchPanel";
 
 const REPO = "https://github.com/chrispetrou/cmf-watch3pro-languages";
 
-// ?demo drives every screen without Bluetooth; ?demo=mismatch / recovery / unsupported pick a case.
+// ?demo drives every screen without Bluetooth; ?demo=mismatch / recovery / unsupported / noverify / many pick a case.
 const DEMO = new URLSearchParams(location.search).get("demo");
 const DEMO_FW: Record<string, string> = { mismatch: "1.0.1.65", recovery: "0.0.0.1" };
 const LANGS = DEMO === "many" ? demoLanguages() : LANGUAGES;
@@ -41,36 +51,26 @@ const cmpVersion = (a: string, b: string) => {
   return 0;
 };
 
-const PHASE_TEXT: Record<Phase | "picker", [string, string]> = {
-  picker: ["Looking for your watch", ""],
-  connecting: ["Connecting to the watch", "This takes a few seconds."],
-  key: ["Logging in to the watch", "Using the pairing saved in this browser. If the watch or this device asks to allow the connection, accept it."],
-  pairing: ["Pairing with the watch", "Accept the request if the watch or this device asks. This is needed the first time, or when the saved pairing no longer works."],
-  reading: ["Reading the watch’s version", "Almost done."],
-};
+const etaMinutes = (startedAt: number, pct: number) =>
+  pct < 3 ? null : Math.round(((Date.now() - startedAt) / pct) * (100 - pct) / 60000);
 
-function eta(startedAt: number, pct: number) {
-  if (pct < 3) return "Estimating time left";
-  const left = ((Date.now() - startedAt) / pct) * (100 - pct) / 60000;
-  return left < 1 ? "Less than a minute left" : `About ${Math.round(left)} min left`;
-}
+const Lede = ({ children, className }: { children: ReactNode; className?: string }) => (
+  <p className={cn("mb-4.5 max-w-[60ch] text-muted-foreground", className)}>{children}</p>
+);
 
-const listNames = (names: string[]) =>
-  names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0] ?? "";
-
-function Note({ tone = "", icon, title, children }: { tone?: string; icon: ReactNode; title: ReactNode; children?: ReactNode }) {
-  return (
-    <div className={`note ${tone}`} role={tone === "err" || tone === "warn" ? "alert" : undefined}>
-      <span className="note-icon">{icon}</span>
-      <div style={{ minWidth: 0, flex: 1 }}><p className="t">{title}</p>{children && <div className="s">{children}</div>}</div>
-    </div>
-  );
-}
+const Indeterminate = () => (
+  <div className="my-2.5 h-1.5 overflow-hidden rounded-full bg-border">
+    <div className="h-full w-[30%] animate-indeterminate rounded-full bg-brand" />
+  </div>
+);
 
 export default function App() {
   const supported = DEMO !== null ? DEMO !== "unsupported" : webBluetoothAvailable();
+  const [uiLang, setUiLang] = useState<UiLang>(storedUiLang);
+  const t = STRINGS[uiLang];
   const [screen, setScreen] = useState<Screen>(supported ? "choose" : "unsupported");
   const [theme, setTheme] = useState<Theme>(storedTheme);
+  const [sysDark, setSysDark] = useState(systemDark);
   const [sel, setSel] = useState<Record<string, boolean>>({ greek: true });
   const [release, setRelease] = useState<Release | null>(null);
   const [fw, setFw] = useState<FirmwareCheck | null>(null);
@@ -84,7 +84,7 @@ export default function App() {
   const [sent, setSent] = useState(0);
   const [startedAt, setStartedAt] = useState(0);
   const [confirmStop, setConfirmStop] = useState(false);
-  const [installStatus, setInstallStatus] = useState("");
+  const [restartLeft, setRestartLeft] = useState<number | null>(null);
   const [newFw, setNewFw] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
@@ -107,16 +107,27 @@ export default function App() {
 
   useEffect(() => { latestRelease().then(setRelease); }, []);
   useEffect(() => {
-    if (theme) document.documentElement.dataset.theme = theme;
-    else delete document.documentElement.dataset.theme;
+    const mq = matchMedia("(prefers-color-scheme: dark)");
+    const on = () => setSysDark(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const dark = theme ? theme === "dark" : sysDark;
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
     try {
       if (theme) localStorage.setItem("wl.theme", theme);
       else localStorage.removeItem("wl.theme");
     } catch { /* no storage */ }
-  }, [theme]);
+  }, [theme, dark]);
+  useEffect(() => {
+    document.documentElement.lang = uiLang;
+    try { localStorage.setItem("wl.lang", uiLang); } catch { /* no storage */ }
+  }, [uiLang]);
 
-  const dark = theme ? theme === "dark" : systemDark();
   const chosen = LANGS.filter((l) => sel[l.id]);
+  const langName = (l: Language) => (uiLang === "el" ? l.el ?? l.en : l.en);
+  const chosenNames = t.list(chosen.map(langName));
   const cur = STEP[screen];
   const busy = installing || screen === "transfer" || screen === "installing";
   const fwOk = fw?.ok ? fw : null;
@@ -149,17 +160,14 @@ export default function App() {
     setLog([]);
     try {
       const result = check.file.size === 0 ? null : await buildImage(check.file, langIds, addLog);
-      if (result && !result.versionOk) {
-        throw new Error("The font version check failed, so the watch could reject this image at boot. Stopping here to keep it safe.");
-      }
+      if (result && !result.versionOk) throw new Error("VERSION_CHECK");
       if (result) addLog(`built ${(result.image.size / 1e6).toFixed(1)} MB, sha256 ${result.sha256}`);
       setBuilt({ key, result });
       setImageUrl((old) => { if (old) URL.revokeObjectURL(old); return result ? URL.createObjectURL(result.image) : null; });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       addLog(`error: ${msg}`);
-      setBuildError(msg.includes("TOO_BIG")
-        ? "These languages don’t fit on the watch together. Choose fewer languages and try again."
+      setBuildError(msg.includes("TOO_BIG") ? "TOO_BIG" : msg === "VERSION_CHECK" ? "VERSION_CHECK"
         : msg.trim().split("\n").at(-1) ?? msg); // a Python traceback ends with the actual error
     }
     setScreen("fwValid");
@@ -233,9 +241,10 @@ export default function App() {
       setScreen("installing");
       setNewFw(null);
       setVerifyError(null);
+      setRestartLeft(null);
       // The watch confirmed the whole transfer, so the install counts as done. Reading the version
       // afterwards is a check: if the page can't reconnect by itself, the done screen offers a button.
-      const v = await link.waitForRestart(ac.signal, setInstallStatus);
+      const v = await link.waitForRestart(ac.signal, setRestartLeft);
       setNewFw(v);
       setScreen(v?.startsWith("0.") ? "recovery" : "done");
     } catch (e) {
@@ -243,8 +252,8 @@ export default function App() {
       const msg = e instanceof Error ? e.message : String(e);
       addLog(`error: ${msg}`);
       setProblem(stage === "transfer"
-        ? { title: `The transfer stopped at ${lastPct}%`, body: "The watch keeps its current firmware until a transfer finishes. Move this device closer, check the watch is still on its charger, then try again." }
-        : { title: "Something went wrong after the transfer", body: "Look at the watch screen. If it shows the time, the install worked. If it shows a QR code and asks to update, connect again and restore the official firmware." });
+        ? { title: t.transferStoppedAt(lastPct), body: t.transferStoppedText }
+        : { title: t.afterTransferTitle, body: t.afterTransferText });
       setScreen("lost");
     } finally {
       setInstalling(false);
@@ -288,215 +297,170 @@ export default function App() {
     try { await navigator.clipboard.writeText(location.href); setCopied(true); } catch { /* not allowed */ }
   };
 
-  const more = (rows: [string, string][]) => (
-    <details className="more">
-      <summary>Technical details</summary>
-      {rows.length > 0 && <dl className="kv mono">{rows.map(([k, v]) => <KV key={k} k={k} v={v} />)}</dl>}
-      {log.length > 0 && <pre className="log mono">{log.join("\n")}</pre>}
-    </details>
-  );
+  const details = (rows: [string, string][] = []) => <Details rows={rows} log={log} />;
 
   // ------------------------------------------------------------ step bodies
   const chooseBody = (
     <>
-      <p className="lede">Pick the languages you want to read on your watch. You can choose more than one.</p>
+      <Lede>{t.chooseLede}</Lede>
       <LanguagePicker languages={LANGS} selected={sel} onToggle={(id) => setSel({ ...sel, [id]: !sel[id] })} />
-      <div className="actions">
-        <span className="grow">
-          Not tested yet means it should work, but nobody has confirmed it on a real watch.{" "}
-          <a href={`${REPO}/issues`}>Tell us how it went</a>
-        </span>
-        <button className="btn btn-primary" type="button" disabled={chosen.length === 0}
-          onClick={() => (fwOk ? startBuild(fwOk) : setScreen("fwEmpty"))}>Continue</button>
-      </div>
+      <Actions note={<>{t.notTestedNote}{" "}<a className="text-foreground underline underline-offset-3" href={`${REPO}/issues`}>{t.tellUs}</a></>}>
+        <Button disabled={chosen.length === 0} onClick={() => (fwOk ? startBuild(fwOk) : setScreen("fwEmpty"))}>{t.continue}</Button>
+      </Actions>
     </>
   );
 
   const fwBody = (
     <>
-      <p className="lede">
-        Your languages are added to Nothing’s official update, right here in the browser. Download it from
-        Nothing, then add it below. It isn’t uploaded anywhere.
-      </p>
-      <div className="dl">
-        <a className="btn btn-secondary" href={release?.url ?? "https://github.com/spike0en/nothing_archive"}>
-          <Download size={16} />Download firmware {expected}
-        </a>
-        <span className="muted" style={{ fontSize: 13 }}>About 45 MB, from Nothing’s servers</span>
+      <Lede>{t.fwLede}</Lede>
+      <div className="mb-3.5 flex flex-wrap items-center gap-3">
+        <Button variant="outline" asChild>
+          <a href={release?.url ?? "https://github.com/spike0en/nothing_archive"}><Download />{t.download(expected)}</a>
+        </Button>
+        <span className="text-[13px] text-muted-foreground">{t.downloadNote}</span>
       </div>
       <input ref={fileInput} type="file" accept=".bin" hidden
         onChange={(e) => { takeFile(e.target.files?.[0]); e.target.value = ""; }} />
 
       {screen === "fwEmpty" && (
-        <div className={dragOver ? "drop over" : "drop"} onDrop={onDrop}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}>
-          <FileUp size={22} />
-          <p>Drop the update file here, or <button className="link" type="button" onClick={pickFile}>choose a file</button></p>
-          <p className="hint">The .bin file you just downloaded</p>
+        <div onDrop={onDrop} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
+          className={cn("rounded-xl border border-dashed border-input bg-muted px-5 py-7 text-center transition-colors",
+            dragOver && "border-brand bg-brand/5")}>
+          <FileUp className="mx-auto size-5.5 text-faint" />
+          <p className="mt-2">
+            {t.drop}{" "}
+            <button type="button" className="font-medium underline decoration-input underline-offset-3 hover:decoration-current" onClick={pickFile}>{t.chooseFile}</button>
+          </p>
+          <p className="mt-1 text-[13px] text-muted-foreground">{t.dropHint}</p>
           {DEMO !== null && (
-            <p className="hint"><button className="link" type="button" onClick={() => {
+            <button type="button" className="mt-1 text-[13px] underline underline-offset-3" onClick={() => {
               const demo: FirmwareOk = { ok: true, file: new File([], `CMF_JX402_08_ATS3089C_V${expected}_GPS_V6.bin`), version: expected, board: "JX402_08", sizeMb: 45.1 };
               setFw(demo);
               startBuild(demo);
-            }}>Use a demo file</button></p>
+            }}>{t.demoFile}</button>
           )}
         </div>
       )}
       {screen === "fwChecking" && fw && (
-        <div className="file">
-          <span className="file-icon"><span className="spinner" /></span>
-          <span className="file-main">
-            <span className="file-name mono" title={fw.file.name}>{fw.file.name}</span>
-            <span className="bar"><i style={{ width: `${checkPct}%` }} /></span>
-          </span>
-          <span className="muted" style={{ fontSize: 13, fontVariantNumeric: "tabular-nums" }}>Checking {checkPct}%</span>
-        </div>
+        <FileRow icon={<Spinner />} name={fw.file.name} mono
+          action={<span className="text-[13px] text-muted-foreground tabular-nums">{t.checking(checkPct)}</span>}>
+          <Progress value={checkPct} className="mt-2 h-1 [&>[data-slot=progress-indicator]]:bg-brand" />
+        </FileRow>
       )}
       {screen === "fwValid" && fwOk && (
-        <div className="file ok">
-          <span className="file-icon"><Check size={16} /></span>
-          <span className="file-main">
-            <span className="file-name mono" title={fwOk.file.name}>{fwOk.file.name}</span>
-            <span className="file-meta"><span>Version <b>{fwOk.version}</b></span><span>{fwOk.sizeMb.toFixed(1)} MB</span><span>Official, unmodified</span></span>
-          </span>
-          <button className="btn btn-ghost" type="button" onClick={() => { setFw(null); setBuilt(null); setScreen("fwEmpty"); }}>Replace</button>
-        </div>
+        <FileRow tone="ok" icon={<Check />} name={fwOk.file.name} mono
+          meta={<><span>{t.version} <b>{fwOk.version}</b></span><span>{fwOk.sizeMb.toFixed(1)} MB</span><span>{t.official}</span></>}
+          action={<Button variant="ghost" size="sm" onClick={() => { setFw(null); setBuilt(null); setScreen("fwEmpty"); }}>{t.replace}</Button>} />
       )}
       {screen === "fwBuilding" && (
-        <div className="file" style={{ marginTop: 12 }}>
-          <span className="file-icon"><span className="spinner" /></span>
-          <span className="file-main">
-            <span className="file-name">Adding {listNames(chosen.map((l) => l.en))}</span>
-            <span className="bar indet"><i /></span>
-            <span className="file-meta">Runs on this device and takes a few seconds. The first time also loads the build tools (about 10 MB).</span>
-          </span>
-        </div>
+        <FileRow className="mt-3" icon={<Spinner />} name={t.adding(chosenNames)} meta={t.buildNote}>
+          <Indeterminate />
+        </FileRow>
       )}
       {screen === "fwValid" && buildError && (
-        <div style={{ marginTop: 12 }}>
-          <Note tone="err" icon={<Warn size={16} />} title="Couldn’t add the languages">
-            {buildError}
-            {more([])}
-          </Note>
-          <div className="actions"><span className="grow" /><button className="btn btn-secondary" type="button" onClick={() => fwOk && startBuild(fwOk)}><Retry size={16} />Try again</button></div>
+        <div className="mt-3">
+          <Notice tone="err" icon={<TriangleAlert />} title={t.buildFailed}>
+            {buildError === "TOO_BIG" ? t.tooBig : buildError === "VERSION_CHECK" ? t.versionCheckFailed : buildError}
+            {details()}
+          </Notice>
+          <Actions>
+            <Button variant="outline" onClick={() => fwOk && startBuild(fwOk)}><RotateCw />{t.tryAgain}</Button>
+          </Actions>
         </div>
       )}
       {screen === "fwValid" && buildFresh && built?.result && (
         <>
-          <div className="file ok" style={{ marginTop: 12 }}>
-            <span className="file-icon"><Check size={16} /></span>
-            <span className="file-main">
-              <span className="file-name">{listNames(chosen.map((l) => l.en))} added</span>
-              <span className="file-meta"><span>{(built.result.image.size / 1e6).toFixed(1)} MB</span><span>Font check passed</span><span>Not sent to the watch yet</span></span>
-            </span>
-            {imageUrl && fwOk && (
-              <a className="btn btn-ghost" href={imageUrl} download={`CMF_Watch3Pro_${fwOk.version}_${[...langIds].sort().join("-")}.bin`}
-                title="Download the patched file, to flash it with the command-line tool">Download</a>
-            )}
-          </div>
-          {more([["Image", `${(built.result.image.size / 1e6).toFixed(1)} MB`], ["SHA-256", built.result.sha256], ["Font version", "Matches what the watch expects"]])}
+          <FileRow className="mt-3" tone="ok" icon={<Check />} name={t.added(chosenNames)}
+            meta={<><span>{(built.result.image.size / 1e6).toFixed(1)} MB</span><span>{t.fontOk}</span><span>{t.notSentYet}</span></>}
+            action={imageUrl && fwOk && (
+              <Button variant="ghost" size="sm" asChild>
+                <a href={imageUrl} download={`CMF_Watch3Pro_${fwOk.version}_${[...langIds].sort().join("-")}.bin`} title={t.downloadPatchedTitle}>{t.downloadPatched}</a>
+              </Button>
+            )} />
+          {details([["Image", `${(built.result.image.size / 1e6).toFixed(1)} MB`], ["SHA-256", built.result.sha256], ["Font version", "29, matches the app"]])}
         </>
       )}
       {screen === "fwValid" && buildFresh && built && !built.result && (
-        <p className="muted" style={{ fontSize: 13, margin: "12px 0 0" }}>Demo file: no image is built.</p>
+        <p className="mt-3 text-[13px] text-muted-foreground">{t.demoNoBuild}</p>
       )}
       {screen === "fwWrong" && fw && !fw.ok && (
         <>
-          <div className="file bad">
-            <span className="file-icon"><Cross size={16} /></span>
-            <span className="file-main">
-              <span className="file-name mono" title={fw.file.name}>{fw.file.name}</span>
-              <span className="file-meta" style={{ color: "var(--err)" }}>{fw.problem}</span>
-            </span>
-            <button className="btn btn-secondary" type="button" onClick={pickFile}>Choose another</button>
-          </div>
-          <p className="muted" style={{ fontSize: 13, margin: "10px 0 0" }}>
-            Use the download button above to get the {expected} update for the CMF Watch 3 Pro.
-          </p>
+          <FileRow tone="err" icon={<X />} name={fw.file.name} mono
+            meta={<span className="text-err">{t.problems[fw.problem] ?? fw.problem}</span>}
+            action={<Button variant="outline" size="sm" onClick={pickFile}>{t.chooseAnother}</Button>} />
+          <p className="mt-2.5 text-[13px] text-muted-foreground">{t.wrongHint(expected)}</p>
         </>
       )}
-      <div className="actions">
-        <span className="grow" />
-        <button className="btn btn-primary" type="button" disabled={screen !== "fwValid" || !buildFresh} onClick={() => setScreen("prep")}>Continue</button>
-      </div>
+      <Actions>
+        <Button disabled={screen !== "fwValid" || !buildFresh} onClick={() => setScreen("prep")}>{t.continue}</Button>
+      </Actions>
     </>
   );
-
-  const PREP = [
-    ["Turn off Bluetooth on your phone", "Otherwise the phone keeps the watch to itself. You turn it back on at the end."],
-    ["Put the watch on its charger", "Leave it there until the end. Installing can take up to 30 minutes."],
-    ["Keep this device awake and close", "Plug it in, stop the screen from locking, and stay within a few steps of the watch."],
-  ] as const;
 
   const connectBody = (
     <>
       {screen === "prep" && (
         <>
-          <div className="list">
-            {PREP.map(([t, s], i) => (
-              <label key={t} className="row">
-                <input type="checkbox" className="check" checked={checks[i]}
-                  onChange={() => setChecks(checks.map((c, j) => (j === i ? !c : c)))} />
-                <span className="row-main"><span className="row-title">{t}</span><span className="row-sub">{s}</span></span>
+          <div className="divide-y overflow-hidden rounded-xl border">
+            {t.prep.map(([title, sub], i) => (
+              <label key={i} htmlFor={`prep-${i}`} className="flex cursor-pointer items-start gap-3 px-4 py-3.5 transition-colors hover:bg-muted">
+                <Checkbox id={`prep-${i}`} className="mt-0.5" checked={checks[i]}
+                  onCheckedChange={() => setChecks(checks.map((c, j) => (j === i ? !c : c)))} />
+                <span className="min-w-0">
+                  <span className="block font-medium">{title}</span>
+                  <span className="mt-0.5 block text-[13.5px] text-muted-foreground">{sub}</span>
+                </span>
               </label>
             ))}
           </div>
           {stopped && !connError && (
-            <div style={{ marginTop: 12 }}>
-              <Note icon={<Warn size={16} />} title="Transfer stopped">
-                The watch keeps its current firmware. Connect again to start the install over.
-              </Note>
-            </div>
+            <Notice className="mt-3" icon={<TriangleAlert />} title={t.stoppedTitle}>{t.stoppedText}</Notice>
           )}
           {connError && (
-            <div style={{ marginTop: 12 }}>
-              <Note tone="err" icon={<Warn size={16} />} title="Couldn’t connect to the watch">
-                Check the three things above and try again. If the watch isn’t in the list, show all devices.
-                {more([["Error", connError]])}
-              </Note>
-            </div>
+            <Notice className="mt-3" tone="err" icon={<TriangleAlert />} title={t.connFailed}>
+              {t.connFailedText}
+              {details([["Error", connError]])}
+            </Notice>
           )}
-          <div className="actions">
-            <label className="grow" style={{ display: "inline-flex", gap: 8, alignItems: "center", cursor: "pointer" }}>
-              <input type="checkbox" className="check" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
-              Show all Bluetooth devices
+          <Actions note={
+            <label htmlFor="show-all" className="inline-flex cursor-pointer items-center gap-2">
+              <Checkbox id="show-all" checked={showAll} onCheckedChange={(v) => setShowAll(v === true)} />
+              {t.showAll}
             </label>
-            <button className="btn btn-primary" type="button" disabled={ready < 3} onClick={connect}>
-              <Bluetooth size={16} />Connect watch
-            </button>
-          </div>
+          }>
+            <Button disabled={ready < 3} onClick={connect}><Bluetooth />{t.connect}</Button>
+          </Actions>
         </>
       )}
       {(screen === "searching" || screen === "pairing") && (
         <>
-          <Note icon={<span className="spinner" />} title={PHASE_TEXT[phase ?? "picker"][0]}>
-            {phase === null
-              ? <>Pick <b>CMF Watch 3 Pro</b> in the browser’s list, then press Pair.</>
-              : PHASE_TEXT[phase][1]}
-            {more([["Mode", DEMO !== null ? "Demo" : "Web Bluetooth"]])}
-          </Note>
-          <div className="actions"><span className="grow" /><button className="btn btn-secondary" type="button" onClick={cancelConnect}>Cancel</button></div>
+          <Notice icon={<Spinner />} title={t.phase[phase ?? "picker"][0]}>
+            {phase === null ? <>{t.pickInList[0]}<b className="text-foreground">{t.pickInList[1]}</b>{t.pickInList[2]}</> : t.phase[phase][1]}
+            {details([["Mode", DEMO !== null ? "Demo" : "Web Bluetooth"]])}
+          </Notice>
+          <Actions><Button variant="outline" onClick={cancelConnect}>{t.cancel}</Button></Actions>
         </>
       )}
       {screen === "connected" && watch && fwOk && (
         <>
-          <Note tone="ok" icon={<Check size={16} />} title="Connected, and the versions match">
-            <dl className="kv"><dt>Watch</dt><dd>{watch.name}</dd><dt>Watch firmware</dt><dd>{watch.firmware}</dd><dt>Update file</dt><dd>{fwOk.version}</dd></dl>
-          </Note>
-          <div className="actions">
-            <span className="grow">Installing can take up to 30 minutes.</span>
-            <button className="btn btn-primary" type="button" onClick={() => install(chosen.map((l) => l.id))}>Start install</button>
-          </div>
+          <Notice tone="ok" icon={<Check />} title={t.connected}>
+            <dl className="mt-1.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0.5 text-[13px]">
+              <dt>{t.watch}</dt><dd className="truncate text-foreground">{watch.name}</dd>
+              <dt>{t.watchFw}</dt><dd className="text-foreground">{watch.firmware}</dd>
+              <dt>{t.updateFile}</dt><dd className="text-foreground">{fwOk.version}</dd>
+            </dl>
+          </Notice>
+          <Actions note={t.upTo30}>
+            <Button onClick={() => install(chosen.map((l) => l.id))}>{t.startInstall}</Button>
+          </Actions>
         </>
       )}
       {screen === "mismatch" && watch && fwOk && (
         <>
-          <Note tone="warn" icon={<Warn size={16} />} title="The watch is on a different version">
-            {cmpVersion(watch.firmware, fwOk.version) < 0
-              ? `The update file is for ${fwOk.version}, but the watch has ${watch.firmware}. Update the watch with Nothing X first, then connect again.`
-              : `The update file is for ${fwOk.version}, but the watch already has ${watch.firmware}. Download the update file for ${watch.firmware} instead.`}
-          </Note>
-          <div className="actions"><span className="grow" /><button className="btn btn-secondary" type="button" onClick={connect}><Retry size={16} />Connect again</button></div>
+          <Notice tone="warn" icon={<TriangleAlert />} title={t.mismatchTitle}>
+            {cmpVersion(watch.firmware, fwOk.version) < 0 ? t.mismatchOlder(fwOk.version, watch.firmware) : t.mismatchNewer(fwOk.version, watch.firmware)}
+          </Notice>
+          <Actions><Button variant="outline" onClick={connect}><RotateCw />{t.connectAgain}</Button></Actions>
         </>
       )}
     </>
@@ -506,205 +470,206 @@ export default function App() {
     <>
       {screen === "transfer" && (
         <>
-          <div className="progress-head">
-            <span className="pct">{pct}%</span>
-            <span className="progress-meta">
-              <span>{(sent / 1e6).toFixed(1)} MB sent</span>
-              <span>{eta(startedAt, pct)}</span>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-3xl font-semibold tracking-tight tabular-nums">{pct}%</span>
+            <span className="flex gap-4 text-[13px] text-muted-foreground tabular-nums max-sm:flex-col max-sm:items-end max-sm:gap-0">
+              <span>{t.sentMb((sent / 1e6).toFixed(1))}</span>
+              <span>{t.eta(etaMinutes(startedAt, pct))}</span>
             </span>
           </div>
-          <div className="bar big" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${pct}%` }} /></div>
-          <Note icon={<Warn size={16} />} title="Keep this tab open">The watch pulls the update from this page. Closing it stops the transfer.</Note>
+          <Progress value={pct} aria-label={`${pct}%`} className="mt-2.5 mb-4 h-1.5 [&>[data-slot=progress-indicator]]:bg-brand" />
+          <Notice icon={<TriangleAlert />} title={t.keepOpen}>{t.keepOpenText}</Notice>
           {confirmStop ? (
-            <div style={{ marginTop: 12 }}>
-              <Note tone="warn" icon={<Warn size={16} />} title="Stop the transfer?">
-                The watch keeps its current firmware, but it may ask to update again until a transfer finishes.
-              </Note>
-              <div className="actions">
-                <span className="grow" />
-                <button className="btn btn-ghost" type="button" onClick={() => setConfirmStop(false)}>Keep going</button>
-                <button className="btn btn-secondary" type="button" onClick={stopInstall}>Stop transfer</button>
-              </div>
+            <div className="mt-3">
+              <Notice tone="warn" icon={<TriangleAlert />} title={t.stopTitle}>{t.stopText}</Notice>
+              <Actions>
+                <Button variant="ghost" onClick={() => setConfirmStop(false)}>{t.keepGoing}</Button>
+                <Button variant="outline" onClick={stopInstall}>{t.stopTransfer}</Button>
+              </Actions>
             </div>
           ) : (
-            <div className="actions">
-              <span className="grow">{restoring ? "Restoring the official firmware" : `Adding ${listNames(chosen.map((l) => l.en))}`}</span>
-              <button className="btn btn-secondary" type="button" onClick={() => setConfirmStop(true)}>Stop</button>
-            </div>
+            <Actions note={restoring ? t.restoringOfficial : t.adding(chosenNames)}>
+              <Button variant="outline" onClick={() => setConfirmStop(true)}>{t.stop}</Button>
+            </Actions>
           )}
-          {more(link.simulated ? [["Mode", "Demo, nothing is sent to the watch"]] : [])}
+          {details(link.simulated ? [["Mode", "Demo, nothing is sent to the watch"]] : [])}
         </>
       )}
       {screen === "installing" && (
         <>
-          <p className="lede" style={{ marginBottom: 10 }}>The watch received everything. It now installs the update and restarts by itself. Leave it on the charger.</p>
-          <div className="bar big indet"><i /></div>
-          <p className="muted" style={{ fontSize: 13, margin: 0, fontVariantNumeric: "tabular-nums" }}>{installStatus}</p>
-          {more([])}
+          <Lede className="mb-2.5">{t.installingText}</Lede>
+          <Indeterminate />
+          <p className="text-[13px] text-muted-foreground tabular-nums">{restartLeft ? t.checkingIn(restartLeft) : restartLeft === 0 ? t.checkingNow : ""}</p>
+          {details()}
         </>
       )}
       {screen === "done" && (
         <>
-          <Note tone="ok" icon={<Check size={16} />} title={restoring ? "The official firmware is back on your watch" : `${listNames(chosen.map((l) => l.en))} ${chosen.length > 1 ? "are" : "is"} on your watch`}>
-            {newFw ? <>The watch restarted and runs firmware {newFw}.</> : <>The watch received the whole update and installs it by itself.</>}
-          </Note>
+          <Notice tone="ok" icon={<Check />} title={restoring ? t.doneOfficial : t.doneLangs(chosenNames, chosen.length > 1)}>
+            {newFw ? t.doneVerified(newFw) : t.doneUnverified}
+          </Notice>
           {!newFw && (
-            <div style={{ marginTop: 12 }}>
-              <Note icon={<WatchIcon size={16} />} title="Check the watch screen">
-                Once it shows the time, everything worked. To confirm the version from here, connect to it once more
-                (this browser needs you to pick the watch again after a restart).
-                {verifyError && <p style={{ color: "var(--err)", marginTop: 6 }}>Couldn’t connect: {verifyError}</p>}
-                {more([])}
-              </Note>
-              <div className="actions">
-                <span className="grow" />
-                <button className="btn btn-secondary" type="button" disabled={verifying} onClick={verify}>
-                  {verifying ? <><span className="spinner" />Checking…</> : <><Bluetooth size={16} />Check the watch</>}
-                </button>
-              </div>
+            <div className="mt-3">
+              <Notice icon={<WatchIcon />} title={t.checkScreen}>
+                {t.checkScreenText}
+                {verifyError && <p className="mt-1.5 text-err">{t.verifyFailed(verifyError)}</p>}
+                {details()}
+              </Notice>
+              <Actions>
+                <Button variant="outline" disabled={verifying} onClick={verify}>
+                  {verifying ? <><Spinner />{t.checkingWatch}</> : <><Bluetooth />{t.checkWatch}</>}
+                </Button>
+              </Actions>
             </div>
           )}
-          <p style={{ margin: "20px 0 0", fontWeight: 500 }}>One more thing: pair the watch with your phone again</p>
-          <ol className="ol">
-            <li>Turn Bluetooth back on and open Nothing X.</li>
-            <li>Add the watch, like the first time.</li>
-            <li>Keep the phone close until it’s done.</li>
+          <p className="mt-5 font-medium">{t.pairAgain}</p>
+          <ol className="mt-2.5 list-decimal space-y-1 pl-5 text-muted-foreground marker:text-faint">
+            {t.pairSteps.map((s) => <li key={s} className="pl-1">{s}</li>)}
           </ol>
-          <div className="actions">
-            <span className="grow" />
-            <a className="btn btn-ghost" href={`${REPO}#readme`}>Read the guide</a>
-            <button className="btn btn-primary" type="button" onClick={startOver}>Start over</button>
-          </div>
+          <Actions>
+            <Button variant="ghost" asChild><a href={`${REPO}#readme`}>{t.readGuide}</a></Button>
+            <Button onClick={startOver}>{t.startOver}</Button>
+          </Actions>
         </>
       )}
       {screen === "lost" && (
         <>
-          <Note tone="err" icon={<Warn size={16} />} title={problem?.title ?? "Something went wrong"}>
+          <Notice tone="err" icon={<TriangleAlert />} title={problem?.title ?? t.somethingWrong}>
             {problem?.body}
-            {more([])}
-          </Note>
-          <div className="actions">
-            <span className="grow" />
-            <button className="btn btn-ghost" type="button" onClick={() => { setWatch(null); setScreen("prep"); }}>Connect again</button>
-            <button className="btn btn-primary" type="button" onClick={() => install(restoring ? [] : chosen.map((l) => l.id))}><Retry size={16} />Try again</button>
-          </div>
+            {details()}
+          </Notice>
+          <Actions>
+            <Button variant="ghost" onClick={() => { setWatch(null); setScreen("prep"); }}>{t.connectAgain}</Button>
+            <Button onClick={() => install(restoring ? [] : chosen.map((l) => l.id))}><RotateCw />{t.tryAgain}</Button>
+          </Actions>
         </>
       )}
     </>
   );
 
-  const steps: { title: string; summary?: ReactNode; edit?: Screen; body: ReactNode }[] = [
-    { title: "Choose languages", summary: listNames(chosen.map((l) => l.en)), edit: "choose", body: chooseBody },
-    { title: "Add the official firmware", summary: fwOk && `Firmware ${fwOk.version}`, edit: "fwValid", body: fwBody },
-    { title: "Connect the watch", summary: watch && `${watch.name}, ${watch.firmware}`, edit: "prep", body: connectBody },
-    { title: "Install", body: installBody },
+  const steps: { summary?: ReactNode; edit?: Screen; body: ReactNode }[] = [
+    { summary: chosenNames, edit: "choose", body: chooseBody },
+    { summary: fwOk && t.fwSummary(fwOk.version), edit: "fwValid", body: fwBody },
+    { summary: watch && `${watch.name}, ${watch.firmware}`, edit: "prep", body: connectBody },
+    { body: installBody },
   ];
 
   // ------------------------------------------------------------ special cases
   const special =
     screen === "unsupported" ? (
       <>
-        <h2 className="step-title" style={{ fontSize: 18 }}>Open this page in Chrome or Edge</h2>
-        <p className="lede" style={{ marginTop: 8 }}>
-          Talking to the watch needs Web Bluetooth, which this browser doesn’t have. It works in Chrome or Edge
-          on Windows, macOS, ChromeOS and Linux, and in Chrome on Android. It doesn’t work on iPhone or iPad, in
-          Safari or in Firefox.
-        </p>
-        <div className="actions">
-          <span className="grow">Tip: send the link to your computer.</span>
-          <button className="btn btn-primary" type="button" onClick={copyLink}><Copy size={16} />{copied ? "Link copied" : "Copy link"}</button>
-        </div>
+        <h2 className="text-lg font-semibold tracking-tight">{t.unsupportedTitle}</h2>
+        <Lede className="mt-2">{t.unsupportedText}</Lede>
+        <Actions note={t.sendLink}>
+          <Button onClick={copyLink}><Copy />{copied ? t.linkCopied : t.copyLink}</Button>
+        </Actions>
       </>
     ) : screen === "recovery" ? (
       <>
-        <h2 className="step-title" style={{ fontSize: 18 }}>Your watch is waiting for an update</h2>
-        <p className="lede" style={{ marginTop: 8 }}>
-          Nothing is broken. This usually means the last install stopped early. Putting the official firmware
-          back fixes it.
-        </p>
-        <ol className="ol" style={{ color: "var(--fg)" }}>
-          <li>Keep the watch on its charger.</li>
-          <li>Use the official update file{fwOk && <> (<span className="mono">{fwOk.version}</span> is ready)</>}.</li>
-          <li>Restore. In this mode the watch takes the update slowly, it can take a few hours. Keep this tab open and the device awake.</li>
+        <h2 className="text-lg font-semibold tracking-tight">{t.recoveryTitle}</h2>
+        <Lede className="mt-2">{t.recoveryText}</Lede>
+        <ol className="list-decimal space-y-1 pl-5 marker:text-faint">
+          {t.recoverySteps(fwOk?.version ?? null).map((s) => <li key={s} className="pl-1">{s}</li>)}
         </ol>
-        {more([["Watch", watch?.name ?? ""], ["Reported version", watch?.firmware ?? ""]])}
-        <div className="actions">
-          <span className="grow" />
-          <a className="btn btn-ghost" href={`${REPO}/issues`}>Get help on GitHub</a>
-          <button className="btn btn-primary" type="button" disabled={!fwOk} onClick={() => install([])}>Restore official firmware</button>
-        </div>
+        {details([[t.watch, watch?.name ?? ""], [t.reportedVersion, watch?.firmware ?? ""]])}
+        <Actions>
+          <Button variant="ghost" asChild><a href={`${REPO}/issues`}>{t.getHelp}</a></Button>
+          <Button disabled={!fwOk} onClick={() => install([])}>{t.restore}</Button>
+        </Actions>
       </>
     ) : null;
 
   return (
-    <>
-      <header className="hdr">
-        <div className="hdr-in">
-          <a className="brand" href="./"><span className="brand-mark"><i /></span>Watch Languages<span className="tag">Unofficial</span></a>
-          <div className="tools">
-            <a className="icon-btn" href={REPO}><Code size={16} /><span className="label">GitHub</span></a>
-            <button className="icon-btn" type="button" aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
+    <I18n.Provider value={{ lang: uiLang, t }}>
+      <header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur-md backdrop-saturate-150">
+        <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between gap-3 px-6 max-sm:px-4">
+          <a className="flex items-center gap-2.5 font-semibold tracking-tight" href="./">
+            <span className="grid size-6 place-items-center rounded-full bg-foreground"><i className="size-3 rounded-full border-[1.5px] border-background" /></span>
+            Watch Languages
+            <Badge variant="outline" className="rounded-full font-medium text-muted-foreground max-sm:hidden">{t.unofficial}</Badge>
+          </a>
+          <div className="flex items-center gap-1">
+            <ToggleGroup type="single" size="sm" variant="outline" value={uiLang} aria-label={t.pageLanguage}
+              onValueChange={(v) => v && setUiLang(v as UiLang)}>
+              {UI_LANGS.map((l) => (
+                <ToggleGroupItem key={l.id} value={l.id} aria-label={l.name} className="px-2.5 text-xs font-semibold">{l.label}</ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
+              <a href={REPO} aria-label="GitHub"><Code /><span className="max-sm:hidden">GitHub</span></a>
+            </Button>
+            <Button variant="ghost" size="icon-sm" className="text-muted-foreground" aria-label={dark ? t.themeToLight : t.themeToDark}
               onClick={() => setTheme(dark ? "light" : "dark")}>
-              {dark ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
+              {dark ? <Sun /> : <Moon />}
+            </Button>
           </div>
         </div>
       </header>
       {link.simulated && (
-        <div className="banner"><b>Demo.</b> No watch is connected and nothing is sent, the screens are simulated.</div>
+        <div className="border-b bg-muted px-6 py-2 text-center text-[13px] text-muted-foreground">
+          <b className="font-medium text-foreground">{t.demo}</b> {t.demoBanner}
+        </div>
       )}
 
-      <div className="frame">
-        <section className="hero">
-          <h1>Read your language on the CMF Watch 3 Pro</h1>
-          <p>Adds Greek, Georgian or Armenian letters to the watch’s own font, in your browser. Free, open source, and not affiliated with Nothing.</p>
+      <div className="mx-auto max-w-[1120px] border-x max-sm:border-x-0">
+        <section className="px-6 pt-14 pb-10 max-sm:px-4 max-sm:pt-8 max-sm:pb-6">
+          <h1 className="max-w-[18ch] text-[clamp(28px,4vw,40px)] leading-[1.1] font-semibold tracking-[-0.035em]">{t.heroTitle}</h1>
+          <p className="mt-3.5 max-w-[54ch] text-[17px] text-muted-foreground max-sm:text-[15.5px]">{t.heroText(t.heroLangs)}</p>
         </section>
 
         <div className="rule" />
-        <main className="split">
-          <section className="flow">
+        <main className="grid grid-cols-[minmax(0,1fr)_400px] max-lg:grid-cols-1">
+          <section className="min-w-0 border-r px-6 pt-8 pb-12 max-lg:border-r-0 max-sm:px-4">
             {special ?? (
-              <ol className="steps">
+              <ol>
                 {steps.map((s, i) => {
                   const state = cur === undefined ? "todo" : screen === "done" || i < cur ? "done" : i === cur ? "cur" : "todo";
+                  const last = i === steps.length - 1;
                   return (
-                    <li key={s.title} className={`step ${state}`} aria-current={state === "cur" ? "step" : undefined}>
-                      <span className="num">{state === "done" ? <Check size={12} width={2.5} /> : i + 1}</span>
-                      <div className="step-head">
-                        <h2 className="step-title">{s.title}</h2>
+                    <li key={i} className="relative pb-7 pl-10 max-sm:pl-9" aria-current={state === "cur" ? "step" : undefined}>
+                      {!last && <span className={cn("absolute top-[30px] bottom-1.5 left-[11px] w-px", state === "done" ? "bg-input" : "bg-border")} />}
+                      <span className={cn("absolute top-0.5 left-0 grid size-[23px] place-items-center rounded-full border text-xs font-semibold tabular-nums",
+                        state === "done" && "border-foreground bg-foreground text-background",
+                        state === "cur" && "border-brand bg-background text-brand ring-4 ring-brand/15",
+                        state === "todo" && "border-input bg-background text-faint")}>
+                        {state === "done" ? <Check className="size-3" strokeWidth={3} /> : i + 1}
+                      </span>
+                      <div className="flex min-h-[27px] items-baseline gap-3 max-sm:flex-wrap">
+                        <h2 className={cn("text-base font-semibold tracking-tight", state === "todo" && "font-medium text-faint")}>{t.steps[i]}</h2>
                         {state === "done" && s.summary && (
-                          <span className="step-sum">
-                            <span>{s.summary}</span>
+                          <span className="ml-auto flex min-w-0 items-baseline gap-3 text-sm text-muted-foreground max-sm:ml-0 max-sm:basis-full">
+                            <span className="truncate">{s.summary}</span>
                             {s.edit && !busy && screen !== "done" && (
-                              <button className="link" type="button" onClick={() => setScreen(s.edit!)}>Edit</button>
+                              <button type="button" className="font-medium text-foreground underline decoration-input underline-offset-3 hover:decoration-current"
+                                onClick={() => setScreen(s.edit!)}>{t.edit}</button>
                             )}
                           </span>
                         )}
                       </div>
-                      {(state === "cur" || (screen === "done" && i === steps.length - 1)) && <div className="step-body" key={screen.slice(0, 2)}>{s.body}</div>}
+                      {(state === "cur" || (screen === "done" && last)) && (
+                        <div key={screen.slice(0, 2)} className="mt-3.5 animate-in fade-in-0 slide-in-from-top-1 duration-200">{s.body}</div>
+                      )}
                     </li>
                   );
                 })}
               </ol>
             )}
           </section>
-          <aside className="aside">
+          <aside className="max-lg:order-first max-lg:border-b">
             <WatchPanel screen={screen} phase={phase} chosen={chosen} pct={pct} watchName={watch?.name ?? null} watchFw={watch?.firmware ?? null} />
           </aside>
         </main>
         <div className="rule" />
 
-        <footer className="ftr">
-          <p>Not affiliated with Nothing or CMF. Use at your own risk. No firmware is hosted here, everything is processed on your device.</p>
-          <nav aria-label="Project links">
-            <a href={`${REPO}#readme`}>Guide</a>
-            <a href={`${REPO}/blob/main/LICENSE`}>License</a>
-            <a href={REPO}>GitHub</a>
+        <footer className="flex flex-wrap justify-between gap-x-6 gap-y-4 px-6 pt-6 pb-10 text-[13px] text-muted-foreground max-sm:px-4">
+          <p className="max-w-[60ch]">{t.footer}</p>
+          <nav className="flex gap-4.5" aria-label="Project links">
+            <a className="hover:text-foreground" href={`${REPO}#readme`}>{t.guide}</a>
+            <a className="hover:text-foreground" href={`${REPO}/blob/main/LICENSE`}>{t.license}</a>
+            <a className="hover:text-foreground" href={REPO}>GitHub</a>
           </nav>
         </footer>
       </div>
-    </>
+    </I18n.Provider>
   );
 }
-
-const KV = ({ k, v }: { k: string; v: string }) => (<><dt>{k}</dt><dd>{v}</dd></>);

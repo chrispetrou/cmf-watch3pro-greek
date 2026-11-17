@@ -17,7 +17,7 @@ export interface WatchLink {
    * click. Returns null when that isn't possible: Chrome on macOS can't find a restarted watch
    * again until the user opens the device picker, so the page then offers verify().
    */
-  waitForRestart(signal: AbortSignal, onStatus: (m: string) => void): Promise<string | null>;
+  waitForRestart(signal: AbortSignal, onCountdown: (secondsLeft: number) => void): Promise<string | null>;
   /** Must be called straight from a click: opens the device picker and reads the version. */
   verify(opts: { showAll: boolean; log: (m: string) => void }): Promise<string>;
   disconnect(): void;
@@ -74,12 +74,12 @@ export class BluetoothWatch implements WatchLink {
     c.disconnect();
   }
 
-  async waitForRestart(signal: AbortSignal, onStatus: (m: string) => void) {
+  async waitForRestart(signal: AbortSignal, onCountdown: (secondsLeft: number) => void) {
     for (let left = RESTART_WAIT_S; left > 0; left--) {
-      onStatus(`The watch is installing and restarting. Checking it in ${left} s.`);
+      onCountdown(left);
       await sleep(1000, signal);
     }
-    onStatus("Checking the watch…");
+    onCountdown(0);
     try {
       const info = await this.session();
       this.log(`after the install the watch runs ${info.firmware}`);
@@ -132,11 +132,12 @@ export class DemoWatch implements WatchLink {
   // ?demo=noverify shows the case where the page can't reconnect by itself.
   noVerify = new URLSearchParams(location.search).get("demo") === "noverify";
 
-  async waitForRestart(signal: AbortSignal, onStatus: (m: string) => void) {
+  async waitForRestart(signal: AbortSignal, onCountdown: (secondsLeft: number) => void) {
     for (let left = 3; left > 0; left--) {
-      onStatus(`The watch is installing and restarting. Checking it in ${left} s.`);
+      onCountdown(left);
       await sleep(1000, signal);
     }
+    onCountdown(0);
     if (this.noVerify) return null;
     return this.firmware.startsWith("0.") ? "1.0.1.77" : this.firmware;
   }

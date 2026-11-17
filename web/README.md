@@ -37,6 +37,19 @@ npm test       # protocol vectors, firmware checks, Pyodide build vs the CLI's s
 Open `http://localhost:5173/?demo` to click through every screen without a watch.
 `?demo=mismatch`, `?demo=recovery` and `?demo=unsupported` show those cases.
 
+## Stack
+
+Vite, React 19 and TypeScript. Styling is Tailwind CSS v4 with [shadcn/ui](https://ui.shadcn.com)
+components (Radix underneath) in `src/components/ui/`, and lucide icons. The theme (colours,
+radii, dark mode via the `.dark` class) is in `src/index.css`; the watch artwork stays plain CSS in
+`src/watch.css`.
+
+To add a shadcn component: `npx shadcn@4.22.0 add <name>`. That version writes `import { cn } from "cn"`
+and installs an unrelated `cn` package; change the import to `@/lib/utils` and `npm uninstall cn`.
+
+The page is in English and Greek (`src/i18n.ts`, the EN/ΕΛ switch in the header, English by
+default). The technical log stays in English.
+
 ## Layout
 
 - `src/ble/protocol.ts`: port of `tools/cmf_ble.py` (framing, AES, CRC). `npm run vectors`
@@ -51,8 +64,7 @@ Open `http://localhost:5173/?demo` to click through every screen without a watch
 - `public/glyphs/<lang>.json`: each language's glyphs, rasterised ahead of time so the browser
   doesn't need the fonts or `lv_font_conv`. Regenerate with `npm run glyphs` after changing a
   language or its font.
-- `src/App.tsx`, `src/ui/`: the wizard. `src/styles.css` is the design's stylesheet unchanged,
-  with a few additions at the end.
+- `src/App.tsx`, `src/ui/`, `src/components/blocks.tsx`: the wizard and its building blocks.
 
 ## Plan
 
