@@ -94,3 +94,5 @@ The interception setup was removed afterwards:
 After the Greek patch was published, a Georgian user asked for Georgian. Inter has no Georgian glyphs at all, so the letters had to come from another font. Noto Sans Georgian Medium (v2.005) was picked because its proportions are closest to Inter's: x-height 0.539 em vs 0.546, cap height 0.714 em vs 0.728. It is rendered at the same 36 px and 2 bpp, so it sits on the same baseline and at a similar size as the stock text.
 
 The 134 glyphs (Mkhedruli, Asomtavruli and Mtavruli) add about 14 KB, well inside the room freed by dropping Hangul. The font partition version stays 29. The build tools were generalised so that each language names its font in `tools/languages.py`.
+
+The Greek and Georgian image was flashed to a watch on 1.0.1.77 and Georgian notifications show correctly.
