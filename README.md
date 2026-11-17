@@ -1,6 +1,6 @@
 # CMF Watch 3 Pro language patches
 
-The CMF Watch 3 Pro can only display the scripts in its built-in font: Latin, Cyrillic, Chinese, Japanese and Korean. Notifications in any other script, like Greek or Georgian, show up as empty boxes.
+The CMF Watch 3 Pro can only display the scripts in its built-in font: Latin, Cyrillic, Chinese, Japanese and Korean. Notifications in any other script, like Greek, Georgian or Armenian, show up as empty boxes.
 
 This repo adds the missing letters to the official firmware's font and flashes it to the watch over Bluetooth from a computer, without going through the Nothing X app. It started as a Greek fix, which I've been running on my own watch (firmware 1.0.1.77), and now takes a list of languages.
 
@@ -19,6 +19,7 @@ The image above is rendered from the patched font itself (`tools/render_preview.
 |---|---|---|---|---|
 | Greek | `greek` | Inter v4.0 Medium | Yes, it's the same font | Yes (1.0.1.77) |
 | Georgian | `georgian` | [Noto Sans Georgian](https://github.com/notofonts/georgian) v2.005 Medium | Close, not identical ([preview](docs/previews/georgian.png)) | Yes (1.0.1.77) |
+| Armenian | `armenian` | [Noto Sans Armenian](https://github.com/notofonts/armenian) v2.008 Medium | Close, not identical ([preview](docs/previews/armenian.png)) | Yes (1.0.1.77) |
 
 Several languages can go into one image, separated by commas in `--lang` (e.g. `--lang greek,georgian`). Korean is removed to make room, which leaves space for many more alphabets. See [Adding a language](#adding-a-language).
 
@@ -47,7 +48,7 @@ python3 -m venv venv
 ./venv/bin/python tools/patch.py --lang greek         # download, build, confirm, flash, verify
 ```
 
-Use `--lang georgian` for Georgian, or `--lang greek,georgian` for both.
+Use `--lang georgian` for Georgian, `--lang armenian` for Armenian, or a list like `--lang greek,georgian`.
 
 `patch.py` looks up the latest Watch 3 Pro release in the [Nothing Archive](https://github.com/spike0en/nothing_archive) update list (model `D399`) and downloads it from Nothing's CDN. It fetches the fonts and `lv_font_conv` into `cache/`, builds the patched image and stops if the font version check fails. If everything looks right it asks before flashing. After the upload it reconnects to make sure the watch didn't end up in upgrade mode.
 
@@ -67,7 +68,7 @@ Bluetooth headphones connected to the computer (AirPods, for example) may stutte
 
 1. The official update is a single file (Actions "AOTA" format) with a few compressed parts: the main app, image resources and one font partition.
 2. The font partition holds `sans36.font`, an LVGL bitmap font. It covers Latin, Cyrillic, CJK and Hangul, and nothing else.
-3. The stock glyphs turned out to be Inter v4.0 Medium at 36 px. Re-rendering the Latin letters with it gives identical bytes. Each language's letters are rendered with the same settings, from Inter when it has them (Greek) or from a similar font when it doesn't (Georgian comes from Noto Sans Georgian), and appended to `sans36.font`.
+3. The stock glyphs turned out to be Inter v4.0 Medium at 36 px. Re-rendering the Latin letters with it gives identical bytes. Each language's letters are rendered with the same settings, from Inter when it has them (Greek) or from a similar font when it doesn't (Georgian and Armenian come from Noto Sans Georgian and Noto Sans Armenian), and appended to `sans36.font`.
 4. The font partition has a fixed size, so the Hangul syllables are dropped to make room. Everything else stays byte for byte the same.
 5. The font is repacked and every checksum in the image is recomputed. See [docs/firmware-format.md](docs/firmware-format.md#checksums-how-they-were-worked-out) for how the checksum rules were worked out.
 6. Nothing X refuses modified images, so `cmf_flash.py` talks to the watch over BLE directly, using the protocol from Gadgetbridge's CMF Watch Pro support. The watch pulls the file and installs it like a normal update.

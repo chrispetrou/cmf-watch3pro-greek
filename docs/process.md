@@ -96,3 +96,11 @@ After the Greek patch was published, a Georgian user asked for Georgian. Inter h
 The 134 glyphs (Mkhedruli, Asomtavruli and Mtavruli) add about 14 KB, well inside the room freed by dropping Hangul. The font partition version stays 29. The build tools were generalised so that each language names its font in `tools/languages.py`.
 
 The Greek and Georgian image was flashed to a watch on 1.0.1.77 and Georgian notifications show correctly.
+
+## 10. Armenian
+
+Armenian was the next alphabet that is written left to right, needs no letter joining and is missing from the stock font. Inter has no Armenian either. Noto Sans Armenian Medium (v2.008) was picked for the same reason as the Georgian font: its x-height and cap height (0.536 and 0.714 em) are close to Inter's (0.546 and 0.728).
+
+The 96 glyphs cover the Armenian block (capital and small letters, punctuation such as ։ ՝ ՞, the ligature և and the dram sign ֏) and the five Armenian ligatures at U+FB13 to U+FB17. They add about 8 KB. The font partition version stays 29, and with Greek, Georgian and Armenian together the build gives the same image whatever order the languages are listed in.
+
+The Greek, Georgian and Armenian image was flashed to a watch on 1.0.1.77 and Armenian notifications show correctly, including the punctuation and the dram sign.
