@@ -90,3 +90,15 @@ default). The technical log stays in English.
 1. Connect, pair, read the version (done).
 2. Build the patched image in the browser (done).
 3. Flash it (done).
+
+## Security
+
+- No server side: the page is static files, the firmware file stays in the browser, and the pairing
+  key is kept in the browser's local storage for this site only.
+- A Content Security Policy (added to the built page by `vite.config.ts`) only allows scripts, styles
+  and fonts from this site, and outside requests only to the Nothing Archive list on
+  raw.githubusercontent.com. `eval` is allowed because Pyodide needs it in the build worker.
+- The release list is third-party data, so its download link is only shown if it points to Nothing's
+  own server, and its version must look like a version number.
+- The deploy workflow gives the build job read access only. Only the deploy job can publish.
+- Dependabot opens weekly update PRs for the npm packages and the workflow's actions.

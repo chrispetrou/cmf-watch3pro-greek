@@ -8,10 +8,8 @@ on:
     paths: ["web/**", "tools/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+# Nothing by default; each job gets only what it needs.
+permissions: {}
 
 # One deployment at a time; a newer push replaces a queued one.
 concurrency:
@@ -21,11 +19,16 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # npm ci runs third-party install scripts, so this job can only read the repo.
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: web
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version-file: web/.nvmrc
@@ -43,6 +46,9 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
