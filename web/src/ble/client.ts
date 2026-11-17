@@ -54,10 +54,14 @@ export class WatchClient {
   // Web Bluetooth doesn't expose the MTU. 180 is what cmf_client.py starts with, and every
   // command used here fits in one packet well below that.
   private maxWrite = 180;
-  // Firmware pieces go out in bigger packets when the characteristic takes write-with-response:
-  // the browser then splits values up to 512 bytes itself (a "long write"). If the watch or the
-  // browser refuses that, flash() drops back to maxWrite.
-  private fwMaxWrite = 180;
+  // Firmware pieces: "fast" sends a piece's packets without waiting for a confirmation of each
+  // (the watch's request for the next piece is the confirmation, and every packet has a CRC).
+  // Waiting for a confirmation per packet costs a round trip each, which made uploads crawl.
+  // If the watch stops asking while fast, the last piece is sent again confirmed and the upload
+  // stays confirmed ("safe") from then on.
+  private fwMode: "fast" | "safe" = "fast";
+  /** How long the watch may be quiet after a fast piece before falling back. Tests shorten it. */
+  fastStallMs = 15000;
 
   constructor(readonly device: BluetoothDevice, private log: Log) {
     device.addEventListener("gattserverdisconnected", () => {
@@ -94,7 +98,6 @@ export class WatchClient {
     const fw = this.chars.get(UUID.fwWrite)!;
     const props = (["write", "writeWithoutResponse", "notify"] as const).filter((p) => fw.properties[p]);
     this.log(`  firmware characteristic: ${props.join(", ")}`);
-    this.fwMaxWrite = fw.properties.write ? 512 : this.maxWrite;
 
     const ffd2 = this.chars.get(UUID.ffd2);
     if (ffd2) {
@@ -288,11 +291,26 @@ export class WatchClient {
       if (r[0] !== 0x01) throw new Error(`the watch refused the update (init 2: ${hex(r)})`);
 
       this.log("uploading, the watch asks for each piece");
-      let sent = 0, last = -1, lastLog = -10;
+      if (!this.chars.get(UUID.fwWrite)!.properties.writeWithoutResponse) this.fwMode = "safe";
+      this.log(`  sending ${this.fwMode === "fast" ? "without" : "with"} a confirmation per packet`);
+      let sent = 0, last = -1, lastLog = -10, sendMs = 0, waitMs = 0;
+      let lastPiece: Bytes | null = null;
       const t0 = performance.now();
       for (;;) {
         if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
-        const m = await this.expectMsg([CMD.FW_CHUNK_REQUEST, CMD.FW_FINISH_ACK1], 60000);
+        const tw = performance.now();
+        let m: Msg;
+        try {
+          m = await this.expectMsg([CMD.FW_CHUNK_REQUEST, CMD.FW_FINISH_ACK1], lastPiece && this.fwMode === "fast" ? this.fastStallMs : 60000);
+        } catch (e) {
+          if (!(lastPiece && this.fwMode === "fast" && this.connected && e instanceof Error && e.message.startsWith("timed out"))) throw e;
+          // Some packets were probably dropped: send the piece again, confirming each packet.
+          this.log(`  the watch went quiet after a fast piece; sending it again with confirmations`);
+          this.fwMode = "safe";
+          await this.sendPiece(lastPiece);
+          m = await this.expectMsg([CMD.FW_CHUNK_REQUEST, CMD.FW_FINISH_ACK1], 60000);
+        }
+        waitMs += performance.now() - tw;
         if (sameCmd(m.cmd, CMD.FW_FINISH_ACK1)) {
           if (m.body[0] !== 0x01) throw new Error(`the watch reported an error at the end (${hex(m.body)})`);
           await this.write(UUID.dataWrite, CMD.FW_FINISH_ACK2, new Uint8Array([A5]));
@@ -304,7 +322,10 @@ export class WatchClient {
         const offset = v.getUint32(0), length = v.getUint32(4);
         const progress = m.body.length > 8 ? m.body[8] : 0;
         if (offset + length > image.length) throw new Error(`the watch asked for bytes past the end of the image (${offset}+${length})`);
-        await this.sendPiece(image.slice(offset, offset + length));
+        const ts = performance.now();
+        lastPiece = image.slice(offset, offset + length);
+        await this.sendPiece(lastPiece);
+        sendMs += performance.now() - ts;
         sent += length;
         if (progress !== last) {
           last = progress;
@@ -312,7 +333,8 @@ export class WatchClient {
           if (progress - lastLog >= 10) {
             lastLog = progress;
             const s = (performance.now() - t0) / 1000;
-            this.log(`  ${progress}%: ${(sent / 1e6).toFixed(1)} MB in ${Math.round(s)} s, ${(sent / 1024 / s).toFixed(1)} KB/s, ${this.fwMaxWrite}-byte packets`);
+            this.log(`  ${progress}%: ${(sent / 1e6).toFixed(1)} MB in ${Math.round(s)} s, ${(sent / 1024 / s).toFixed(1)} KB/s ` +
+              `(sending ${Math.round(sendMs / 1000)} s, waiting for the watch ${Math.round(waitMs / 1000)} s, ${this.fwMode})`);
           }
         }
       }
@@ -324,22 +346,23 @@ export class WatchClient {
     }
   }
 
-  /** One requested piece of the image, in packets as big as the firmware characteristic allows. */
+  /** One requested piece of the image, in packets of maxWrite bytes. */
   private async sendPiece(data: Bytes) {
     const ch = this.chars.get(UUID.fwWrite)!;
-    const send = async (size: number) => {
-      for (const pkt of await buildPackets(CMD.FW_CHUNK_WRITE, data, this.key, size)) {
-        if (ch.properties.write) await ch.writeValueWithResponse(pkt);
-        else await ch.writeValueWithoutResponse(pkt);
+    const packets = await buildPackets(CMD.FW_CHUNK_WRITE, data, this.key, this.maxWrite);
+    if (this.fwMode === "fast") {
+      try {
+        for (const pkt of packets) await ch.writeValueWithoutResponse(pkt);
+        return;
+      } catch (e) {
+        if (!this.connected) throw e;
+        this.log(`  writing without confirmation failed (${e instanceof Error ? e.message : String(e)}), confirming each packet from now on`);
+        this.fwMode = "safe";
       }
-    };
-    try {
-      await send(this.fwMaxWrite);
-    } catch (e) {
-      if (this.fwMaxWrite <= this.maxWrite || !this.connected) throw e;
-      this.log(`  ${this.fwMaxWrite}-byte packets refused (${e instanceof Error ? e.message : String(e)}), using ${this.maxWrite}`);
-      this.fwMaxWrite = this.maxWrite;
-      await send(this.fwMaxWrite);
+    }
+    for (const pkt of packets) {
+      if (ch.properties.write) await ch.writeValueWithResponse(pkt);
+      else await ch.writeValueWithoutResponse(pkt);
     }
   }
 
