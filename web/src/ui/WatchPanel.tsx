@@ -38,10 +38,12 @@ function Face({ screen, phase, chosen, pct, watchFw }: Props) {
         <><span className="big">10:42</span><span className="small">Mon 16 Nov</span></>
       ) : (
         <>
-          <span className="time">10:42</span>
-          {chosen.slice(0, 2).map((m) => (
-            <span key={m.id} className="notif" lang={m.code}><b>{m.sender}</b><span>{m.msg}</span></span>
+          {/* Up to two full cards; from three on, compact one-line cards and a count of the rest. */}
+          {chosen.length < 3 && <span className="time">10:42</span>}
+          {chosen.slice(0, 3).map((m) => (
+            <span key={m.id} className={chosen.length < 3 ? "notif" : "notif compact"} lang={m.code}><b>{m.sender}</b><span>{m.msg}</span></span>
           ))}
+          {chosen.length > 3 && <span className="small more">+{chosen.length - 3} more</span>}
         </>
       );
     case "pairing":
