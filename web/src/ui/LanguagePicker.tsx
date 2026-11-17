@@ -5,6 +5,7 @@ import { Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useT } from "@/i18n";
 import type { Language } from "@/lib/languages";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
   }, [languages, query]);
 
   return (
+    <TooltipProvider>
     <div>
       {many && (
         <>
@@ -57,10 +59,15 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
             <span className="text-[17px] font-semibold tracking-tight" lang={l.code}>{l.name}</span>
             {/* The name in the page's language, unless it's the same as the native one (Ελληνικά on the Greek page). */}
             <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{(lang === "el" ? l.el ?? l.en : l.en) === l.name ? "" : lang === "el" ? l.el ?? l.en : l.en}</span>
-            <span className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground" title={l.tested ? t.testedLong : t.notTestedLong}>
-              <i className={cn("size-1.5 rounded-full", l.tested ? "bg-ok" : "bg-faint")} />
-              <span className="max-sm:sr-only">{l.tested ? t.tested : t.notTested}</span>
-            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex cursor-help items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                  <i className={cn("size-1.5 rounded-full", l.tested ? "bg-ok" : "bg-faint")} />
+                  <span className="max-sm:sr-only">{l.tested ? t.tested : t.notTested}</span>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{l.tested ? t.testedLong : t.notTestedNote}</TooltipContent>
+            </Tooltip>
             <Switch id={`${id}-${l.id}`} checked={!!selected[l.id]} onCheckedChange={() => onToggle(l.id)} aria-label={l.en} />
           </label>
         ))}
@@ -71,5 +78,6 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
         )}
       </div>
     </div>
+    </TooltipProvider>
   );
 }
