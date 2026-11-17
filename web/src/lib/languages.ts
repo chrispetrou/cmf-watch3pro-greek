@@ -13,7 +13,7 @@ export type Language = {
 export const LANGUAGES: Language[] = [
   { id: "greek", code: "el", name: "Ελληνικά", en: "Greek", tested: true,
     sender: "Μαρία", msg: "Φτάνω σε 10 λεπτά, κράτα μου θέση!", date: "Δευτέρα 16 Νοε" },
-  { id: "georgian", code: "ka", name: "ქართული", en: "Georgian", tested: false,
+  { id: "georgian", code: "ka", name: "ქართული", en: "Georgian", tested: true,
     sender: "ნინო", msg: "ხვალ 10 საათზე შევხვდეთ?", date: "ორშაბათი, 16 ნოემბერი" },
   { id: "armenian", code: "hy", name: "Հայերեն", en: "Armenian", tested: false,
     sender: "Արամ", msg: "Շնորհակալություն, երեկոյան կզանգեմ։", date: "Երկուշաբթի, 16 նոյեմբերի" },
