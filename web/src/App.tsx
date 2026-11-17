@@ -1,5 +1,6 @@
 // Watch Languages: choose languages, add the official firmware, connect, install.
 import { type DragEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   Bluetooth, Check, Code, Copy, Download, FileUp, Info, Moon, RotateCw, Sun, TriangleAlert, Watch as WatchIcon, X,
 } from "lucide-react";
@@ -47,6 +48,20 @@ function storedTheme(): Theme {
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 const systemDark = () => matchMedia("(prefers-color-scheme: dark)").matches;
+const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Chromium has view transitions, and Web Bluetooth only runs there anyway; elsewhere screens just swap.
+const canTransition = "startViewTransition" in document;
+
+const SHORT_TITLE = "Watch Languages";
+
+/** Focus the current step's heading, and scroll it into view when it isn't comfortably visible. */
+function revealStep() {
+  const h = document.querySelector<HTMLElement>('[aria-current="step"] h2');
+  if (!h) return;
+  h.focus({ preventScroll: true });
+  const top = h.getBoundingClientRect().top;
+  if (top < 72 || top > innerHeight * 0.6) h.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
+}
 
 const cmpVersion = (a: string, b: string) => {
   const x = a.split(".").map(Number), y = b.split(".").map(Number);
@@ -71,7 +86,24 @@ export default function App() {
   const supported = DEMO !== null ? DEMO !== "unsupported" : webBluetoothAvailable();
   const [uiLang, setUiLang] = useState<UiLang>(storedUiLang);
   const t = STRINGS[uiLang];
-  const [screen, setScreen] = useState<Screen>(supported ? "choose" : "unsupported");
+  const [screen, setScreenNow] = useState<Screen>(supported ? "choose" : "unsupported");
+  const screenRef = useRef(screen);
+  const transition = useRef<ViewTransition | null>(null);
+  // Every screen change goes through a view transition: the steps glide to their new heights and
+  // the watch face crossfades, instead of the page jumping.
+  function setScreen(s: Screen) {
+    if (s === screenRef.current || !canTransition || reducedMotion() || document.hidden) {
+      screenRef.current = s;
+      setScreenNow(s);
+      return;
+    }
+    screenRef.current = s;
+    const vt = document.startViewTransition(() => flushSync(() => setScreenNow(s)));
+    transition.current = vt;
+    // A newer screen change skips this one; that's expected, not an error.
+    vt.ready.catch(() => {});
+    vt.finished.finally(() => { if (transition.current === vt) transition.current = null; });
+  }
   const [theme, setTheme] = useState<Theme>(storedTheme);
   const [sysDark, setSysDark] = useState(systemDark);
   const [sel, setSel] = useState<Record<string, boolean>>({ greek: true });
@@ -147,6 +179,24 @@ export default function App() {
   const buildFresh = !!fwOk && !!built && built.key === buildKey(fwOk.file, langIds) && !buildError;
   const addLog = (m: string) =>
     setLog((l) => [...l, `[${new Date().toLocaleTimeString([], { hour12: false })}] ${m}`]);
+
+  // A new step: move focus to it and bring it into view (on phones the watch sits above the steps),
+  // once any view transition has finished so the scroll doesn't fight the animation.
+  const firstStep = useRef(true);
+  useEffect(() => {
+    if (firstStep.current) { firstStep.current = false; return; }
+    const vt = transition.current;
+    if (vt) vt.finished.then(revealStep); else revealStep();
+  }, [cur]);
+
+  // The install takes up to half an hour, so show how far it is in the tab title too.
+  const baseTitle = useRef(document.title);
+  useEffect(() => {
+    document.title = screen === "transfer" ? `${pct}% · ${SHORT_TITLE}`
+      : screen === "installing" ? `${t.panel.installing}… · ${SHORT_TITLE}`
+      : screen === "done" ? `✓ ${t.panel.ready} · ${SHORT_TITLE}`
+      : baseTitle.current;
+  }, [screen, pct, t]);
 
   // ------------------------------------------------------------ firmware file
   async function takeFile(file: File | undefined) {
@@ -644,7 +694,8 @@ export default function App() {
                   const state = cur === undefined ? "todo" : screen === "done" || i < cur ? "done" : i === cur ? "cur" : "todo";
                   const last = i === steps.length - 1;
                   return (
-                    <li key={i} className="relative pb-7 pl-10 max-sm:pl-9" aria-current={state === "cur" ? "step" : undefined}>
+                    <li key={i} className="relative pb-7 pl-10 [view-transition-class:step] max-sm:pl-9" aria-current={state === "cur" ? "step" : undefined}
+                      style={{ viewTransitionName: `step-${i}` }}>
                       {!last && <span className={cn("absolute top-[30px] bottom-1.5 left-[11px] w-px", state === "done" ? "bg-input" : "bg-border")} />}
                       <span className={cn("absolute top-0.5 left-0 grid size-[23px] place-items-center rounded-full border text-xs font-semibold tabular-nums",
                         state === "done" && "border-foreground bg-foreground text-background",
@@ -653,7 +704,7 @@ export default function App() {
                         {state === "done" ? <Check className="size-3" strokeWidth={3} /> : i + 1}
                       </span>
                       <div className="flex min-h-[27px] items-baseline gap-3 max-sm:flex-wrap">
-                        <h2 className={cn("text-base font-semibold tracking-tight", state === "todo" && "font-medium text-faint")}>{t.steps[i]}</h2>
+                        <h2 tabIndex={-1} className={cn("scroll-mt-20 text-base font-semibold tracking-tight outline-none", state === "todo" && "font-medium text-faint")}>{t.steps[i]}</h2>
                         {state === "done" && s.summary && (
                           <span className="ml-auto flex min-w-0 items-baseline gap-3 text-sm text-muted-foreground max-sm:ml-0 max-sm:basis-full">
                             <span className="truncate">{s.summary}</span>
@@ -665,7 +716,7 @@ export default function App() {
                         )}
                       </div>
                       {(state === "cur" || (screen === "done" && last)) && (
-                        <div key={screen.slice(0, 2)} className="mt-3.5 animate-in fade-in-0 slide-in-from-top-1 duration-200">{s.body}</div>
+                        <div key={screen.slice(0, 2)} className={cn("mt-3.5", !canTransition && "animate-in fade-in-0 slide-in-from-top-1 duration-200")}>{s.body}</div>
                       )}
                     </li>
                   );
@@ -679,7 +730,7 @@ export default function App() {
         </main>
         <div className="rule" />
 
-        <footer className="flex flex-wrap justify-between gap-x-6 gap-y-4 px-6 pt-6 pb-10 text-[13px] text-muted-foreground max-sm:px-4">
+        <footer className="[view-transition-name:footer] flex flex-wrap justify-between gap-x-6 gap-y-4 px-6 pt-6 pb-10 text-[13px] text-muted-foreground max-sm:px-4">
           <p className="max-w-[60ch]">{t.footer}</p>
           <nav className="flex gap-4.5" aria-label="Project links">
             <a className="hover:text-foreground" href={`${REPO}#readme`}>{t.guide}</a>

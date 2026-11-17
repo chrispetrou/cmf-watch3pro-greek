@@ -88,7 +88,6 @@ export function EmojiOption({ checked, onChange }: { checked: boolean; onChange:
   const id = useId();
   return (
     <label htmlFor={id} className="mt-2.5 flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 transition-colors hover:bg-muted max-sm:px-3.5 max-sm:py-3">
-      <span className="text-[22px] leading-none" aria-hidden="true">😊</span>
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-semibold tracking-tight">{t.emojiTitle}</span>
         <span className="block text-sm text-muted-foreground">{t.emojiText}</span>
