@@ -28,9 +28,11 @@ Several languages can go into one image, separated by commas in `--lang` (e.g. `
 
 ## In the browser (work in progress)
 
+**Use it at [watchlanguages.app](https://watchlanguages.app).**
+
 `web/` is a browser version for people who'd rather not use a terminal: choose the languages, add the official update file, connect the watch over Web Bluetooth and install. It builds the image with the same Python code as the scripts (run in the browser with Pyodide), so the result is identical byte for byte. It needs Chrome or Edge on a computer, or Chrome on Android, and has been tested on a watch with Greek, Georgian and Armenian. An install takes about 6 minutes plus the restart.
 
-So far it has only been tested on macOS with Chrome. Windows, Linux, ChromeOS and Android support Web Bluetooth too, so it should work there, but nobody has tried it yet. If you do, please [open an issue](https://github.com/chrispetrou/cmf-watch3pro-languages/issues) and say how it went. Use it at **[chrispetrou.github.io/cmf-watch3pro-languages](https://chrispetrou.github.io/cmf-watch3pro-languages/)**. [web/README.md](web/README.md) explains how to run it locally.
+So far it has only been tested on macOS with Chrome. Windows, Linux, ChromeOS and Android support Web Bluetooth too, so it should work there, but nobody has tried it yet. If you do, please [open an issue](https://github.com/chrispetrou/cmf-watch3pro-languages/issues) and say how it went. [web/README.md](web/README.md) explains how to run it locally.
 
 ## Requirements
 

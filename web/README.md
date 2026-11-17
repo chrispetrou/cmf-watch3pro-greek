@@ -29,7 +29,8 @@ What's real so far:
 `?demo` simulates every step instead and says so in a banner (`?demo=noverify` shows the case
 where the page can't reconnect after the install).
 
-It's hosted at https://chrispetrou.github.io/cmf-watch3pro-languages/, deployed from `web/ble-spike` by
+It's hosted at https://watchlanguages.app (GitHub Pages with a custom domain; watchlanguages.com and
+the old github.io address redirect there), deployed from `web/ble-spike` by
 `.github/workflows/pages.yml` (build, tests, GitHub Pages). Everything runs in the visitor's browser:
 GitHub Pages only serves the files, including the fonts (bundled, no Google Fonts) and Pyodide.
 The only other request is the Nothing Archive's release list on raw.githubusercontent.com, to
