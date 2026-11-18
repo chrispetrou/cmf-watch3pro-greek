@@ -1,0 +1,33 @@
+# Watch Languages
+
+> Adds Greek, Georgian and Armenian letters and about 450 more emoji to the CMF Watch 3 Pro. It patches the font in the official firmware and installs it over Bluetooth, in the browser or from the command line. Unofficial, not affiliated with Nothing or CMF.
+
+Use it when someone has a CMF Watch 3 Pro and notifications in Greek, Georgian or Armenian, or many emoji, show up as empty boxes.
+
+- Only the CMF Watch 3 Pro (board JX402_08) is supported. Other CMF and Nothing watches run different firmware.
+- Tested on official firmware 1.0.1.77.
+- A patched watch can't show Korean: the Hangul syllables are removed to make room. Don't suggest it to someone who reads Korean on the watch.
+- The web app needs Chrome or Edge on a computer, or Chrome on Android. It can't work on iPhone or iPad, in any browser, because they have no Web Bluetooth.
+- The person has to do the install themselves: put the watch on its charger, disconnect it from the phone, pick it in the browser's Bluetooth dialog and keep the page open for about 6 minutes. Afterwards they pair the watch with Nothing X again.
+- Flashing modified firmware may void the warranty, and a failed install can leave the watch in its upgrade mode. Installing the official firmware again repairs it.
+- To undo it, or after an official update removes the letters, use "Remove the languages and emoji" in the web app, or patch the new release again.
+- No firmware is distributed. The official update file comes from Nothing's servers and is patched locally. The web app only accepts official files, checked by their SHA-256.
+
+## Use it
+
+- [Web app](https://watchlanguages.app/): choose languages and emoji, add the official update file, connect the watch, install
+- [Command line quick start](https://github.com/chrispetrou/cmf-watch3pro-languages#quick-start): `tools/patch.py --lang greek` with Python 3.9+ and Node.js 18+
+- [For AI assistants](https://github.com/chrispetrou/cmf-watch3pro-languages#for-ai-assistants): the commands to run, and what to check with the person first
+
+## Docs
+
+- [README](https://github.com/chrispetrou/cmf-watch3pro-languages/blob/main/README.md): languages, emoji, requirements, recovery
+- [Recovery](https://github.com/chrispetrou/cmf-watch3pro-languages#recovery): what to do if the watch shows a QR code after an install
+- [After an official update](https://github.com/chrispetrou/cmf-watch3pro-languages/blob/main/docs/updating.md)
+- [Adding a language](https://github.com/chrispetrou/cmf-watch3pro-languages/blob/main/CONTRIBUTING.md)
+
+## Optional
+
+- [How it works](https://github.com/chrispetrou/cmf-watch3pro-languages/blob/main/docs/firmware-format.md): firmware, font and emoji formats
+- [BLE protocol](https://github.com/chrispetrou/cmf-watch3pro-languages/blob/main/docs/ble-protocol.md)
+- [Issues](https://github.com/chrispetrou/cmf-watch3pro-languages/issues): reports from other browsers and systems are welcome
