@@ -1,0 +1,41 @@
+<!doctype html>
+<!-- GitHub Pages serves this for any address that doesn't exist, at that address. Paths are
+     absolute so it also works for nested addresses like /a/b/c. It isn't built by Vite, so it
+     carries its own CSP and loads only files from this site. -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Page not found · Watch Languages</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <link rel="preload" href="/audiowide.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/404.css" />
+    <!-- Applies the theme and page language saved by the app before the page paints. -->
+    <script src="/404.js"></script>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M17 4H8a4 4 0 0 0-4 4v16a4 4 0 0 0 4 4h16a4 4 0 0 0 4-4v-9" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+          <rect x="21" y="3" width="8" height="8" rx="1.5" class="pixel" />
+        </svg>
+        Watch Languages
+      </a>
+    </header>
+
+    <main>
+      <!-- 4, the empty box the watch draws for a missing letter, 4. -->
+      <p class="code" aria-hidden="true">4<span class="tofu"></span>4</p>
+      <h1 data-el="Αυτή η σελίδα δεν υπάρχει">This page doesn't exist</h1>
+      <p class="lede" data-el="Όπως ένα γράμμα που λείπει από τη γραμματοσειρά του ρολογιού, εδώ δεν υπάρχει τίποτα να δείξουμε. Ίσως ο σύνδεσμος είναι παλιός ή έχει λάθος.">Like a letter missing from the watch's font, there's nothing here to show. The link may be old or mistyped.</p>
+      <a class="button" href="/" data-el="Πίσω στην αρχική">Back to the app</a>
+    </main>
+  </body>
+</html>
