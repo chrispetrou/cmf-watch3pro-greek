@@ -29,6 +29,10 @@ You need the exact `.bin` of the release on the watch.
 
 Keep the file as `firmware/ORIGINAL_<version>.bin`. It's also your recovery image.
 
+### For the web app
+
+The web app only accepts official files it knows by SHA-256. Add the new release to `OFFICIAL` in `web/src/lib/firmware.ts` (version, `shasum -a 256` of the file, and its link on Nothing's CDN) and to `firmware/SHA256SUMS`. Check the hash against a second source if you can, for example the file downloaded again through the Nothing Archive and through Nothing X. Until then the app tells visitors the file is not an official release it knows.
+
 ### 2. Build
 
 ```bash

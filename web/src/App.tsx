@@ -13,7 +13,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type Phase, webBluetoothAvailable } from "@/ble/client";
 import { type BuildResult, buildImage } from "@/build";
 import { I18n, STRINGS, UI_LANGS, type UiLang, storedUiLang } from "@/i18n";
-import { type FirmwareCheck, type Release, checkFirmware, latestRelease } from "@/lib/firmware";
+import { type FirmwareCheck, LATEST, checkFirmware } from "@/lib/firmware";
 import { EMOJI_PREVIEW, LANGUAGES, type Language, demoLanguages } from "@/lib/languages";
 import { cn } from "@/lib/utils";
 import { BluetoothWatch, DemoWatch, type WatchInfo, type WatchLink } from "@/lib/watch";
@@ -111,7 +111,6 @@ export default function App() {
   // "Remove the languages": install Nothing's file unchanged, the same path as a recovery restore.
   const [restoreOnly, setRestoreOnly] = useState(false);
   const [emoji, setEmoji] = useState(false);
-  const [release, setRelease] = useState<Release | null>(null);
   const [fw, setFw] = useState<FirmwareCheck | null>(null);
   const [checkPct, setCheckPct] = useState(0);
   // A file dragged over the page during the firmware step: the whole page becomes the drop target.
@@ -145,7 +144,6 @@ export default function App() {
     () => (DEMO !== null ? new DemoWatch(DEMO_FW[DEMO] ?? undefined) : new BluetoothWatch()), [],
   );
 
-  useEffect(() => { latestRelease().then(setRelease); }, []);
   useEffect(() => {
     const mq = matchMedia("(prefers-color-scheme: dark)");
     const on = () => setSysDark(mq.matches);
@@ -175,7 +173,7 @@ export default function App() {
   const cur = STEP[screen];
   const busy = installing || screen === "transfer" || screen === "installing";
   const fwOk = fw?.ok ? fw : null;
-  const expected = release?.version ?? "1.0.1.77";
+  const expected = LATEST.version;
   const ready = checks.filter(Boolean).length;
   const langIds = restoreOnly ? [] : parts;
   const buildFresh = !!fwOk && !!built && built.key === buildKey(fwOk.file, langIds) && !buildError;
@@ -395,7 +393,7 @@ export default function App() {
       <Lede>{restoreOnly ? t.fwLedeRestore : t.fwLede}</Lede>
       <div className="mb-3.5 flex flex-wrap items-center gap-3">
         <Button variant="outline" asChild>
-          <a href={release?.url ?? "https://github.com/spike0en/nothing_archive"}><Download />{t.download(expected)}</a>
+          <a href={LATEST.url}><Download />{t.download(expected)}</a>
         </Button>
         <span className="text-sm text-muted-foreground">{t.downloadNote}</span>
       </div>

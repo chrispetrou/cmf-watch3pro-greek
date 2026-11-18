@@ -1,12 +1,16 @@
 # Weekly update PRs for the web app's npm packages and the workflow's actions.
 # Major npm versions (TypeScript, Vite, Vitest, @types/node past Node 22, ...) are left out:
 # those are upgraded by hand in their own PR.
+# New releases wait a week before Dependabot offers them: hijacked packages are usually
+# found and pulled within days. Read the lockfile changes before merging.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /web
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
@@ -17,3 +21,5 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7

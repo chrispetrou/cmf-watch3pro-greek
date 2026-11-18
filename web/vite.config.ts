@@ -4,9 +4,8 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
 // Content Security Policy for the built page (GitHub Pages can't send headers, so it goes in a
-// meta tag; dev mode is left alone because Vite's dev server injects inline code). The outside
-// requests are the Nothing Archive release list and Cloudflare Web Analytics (cookieless visit
-// counts, built page only). Chrome applies this policy to the build
+// meta tag; dev mode is left alone because Vite's dev server injects inline code). The only outside
+// requests are Cloudflare Web Analytics (cookieless visit counts, built page only). Chrome applies this policy to the build
 // worker too, and Pyodide needs eval and WebAssembly there; scripts still only come from this site.
 // Vite inlines the smallest font files as data: URLs.
 const CSP = [
@@ -15,7 +14,7 @@ const CSP = [
   "style-src 'self'",
   "img-src 'self' data:",
   "font-src 'self' data:",
-  "connect-src 'self' https://raw.githubusercontent.com https://cloudflareinsights.com",
+  "connect-src 'self' https://cloudflareinsights.com",
   "worker-src 'self'",
   "object-src 'none'",
   "base-uri 'none'",

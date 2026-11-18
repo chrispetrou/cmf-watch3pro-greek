@@ -12,7 +12,18 @@ import "@fontsource-variable/noto-sans-armenian";
 import "./index.css";
 import "./watch.css";
 
-createRoot(document.getElementById("root")!).render(
+// Refuse to run inside another site's frame, where a visitor could be tricked into clicking
+// through the install. GitHub Pages can't send frame-ancestors, so this is checked here.
+const framed = (() => { try { return window.top !== window.self; } catch { return true; } })();
+
+if (framed) {
+  const a = document.createElement("a");
+  a.href = location.href;
+  a.target = "_top";
+  a.rel = "noopener";
+  a.textContent = "Open Watch Languages in its own tab";
+  document.getElementById("root")!.replaceChildren(a);
+} else createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />
   </StrictMode>,
