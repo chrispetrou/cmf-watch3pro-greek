@@ -107,10 +107,10 @@ export default function App() {
   }
   const [theme, setTheme] = useState<Theme>(storedTheme);
   const [sysDark, setSysDark] = useState(systemDark);
-  const [sel, setSel] = useState<Record<string, boolean>>({ greek: true });
+  const [sel, setSel] = useState<Record<string, boolean>>({});
   // "Remove the languages": install Nothing's file unchanged, the same path as a recovery restore.
   const [restoreOnly, setRestoreOnly] = useState(false);
-  const [emoji, setEmoji] = useState(true);
+  const [emoji, setEmoji] = useState(false);
   const [release, setRelease] = useState<Release | null>(null);
   const [fw, setFw] = useState<FirmwareCheck | null>(null);
   const [checkPct, setCheckPct] = useState(0);
