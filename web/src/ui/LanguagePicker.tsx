@@ -1,7 +1,7 @@
 // Language list that stays usable as languages are added: one compact row each, and from
 // SEARCH_FROM languages on, a search field, a scrolling list and chips for what's selected.
 import { useId, useMemo, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Info, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +22,7 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
   const [query, setQuery] = useState("");
   const id = useId();
   const many = languages.length >= SEARCH_FROM;
+  const label = (l: Language) => (lang === "el" ? l.el ?? l.en : l.en);
   const chosen = languages.filter((l) => selected[l.id]);
   const shown = useMemo(() => {
     const q = fold(query.trim());
@@ -56,18 +57,18 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
         {shown.map((l) => (
           <label key={l.id} htmlFor={`${id}-${l.id}`}
             className="flex cursor-pointer items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted max-sm:px-3.5 max-sm:py-3">
-            <span className="text-[17px] font-semibold tracking-tight" lang={l.code}>{l.name}</span>
-            {/* The name in the page's language, unless it's the same as the native one (Ελληνικά on the Greek page). */}
-            <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{(lang === "el" ? l.el ?? l.en : l.en) === l.name ? "" : lang === "el" ? l.el ?? l.en : l.en}</span>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="inline-flex cursor-help items-center gap-1.5 text-[12.5px] text-muted-foreground">
-                  <i className={cn("size-1.5 rounded-full", l.tested ? "bg-ok" : "bg-faint")} />
-                  <span className="max-sm:sr-only">{l.tested ? t.tested : t.notTested}</span>
-                </span>
+                <button type="button" className="hit -mr-1 inline-flex shrink-0 cursor-help text-faint transition-colors hover:text-muted-foreground"
+                  aria-label={l.tested ? t.tested : t.notTested} onClick={(e) => e.preventDefault()}>
+                  <Info className="size-4" />
+                </button>
               </TooltipTrigger>
               <TooltipContent>{l.tested ? t.testedLong : t.notTestedNote}</TooltipContent>
             </Tooltip>
+            {/* The name in the page's language first, then the native one unless they're the same (Ελληνικά on the Greek page). */}
+            <span className="text-[15px] font-semibold tracking-tight">{label(l)}</span>
+            <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground" lang={l.code}>{label(l) === l.name ? "" : l.name}</span>
             <Switch id={`${id}-${l.id}`} checked={!!selected[l.id]} onCheckedChange={() => onToggle(l.id)} aria-label={l.en} />
           </label>
         ))}

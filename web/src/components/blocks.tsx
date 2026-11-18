@@ -10,7 +10,7 @@ export type Tone = "neutral" | "ok" | "warn" | "err";
 
 const TILE: Record<Tone, string> = {
   neutral: "bg-muted text-muted-foreground border border-border",
-  ok: "bg-ok-soft text-ok",
+  ok: "text-ok",
   warn: "bg-warn-soft text-warn",
   err: "bg-err-soft text-err",
 };
@@ -50,7 +50,7 @@ export function Details({ rows = [], log }: { rows?: [string, string][]; log: st
         {t.details}
       </CollapsibleTrigger>
       {/* Height follows Radix's measured content height, so it opens and closes smoothly. */}
-      <CollapsibleContent className="overflow-hidden duration-200 ease-[cubic-bezier(0.2,0,0,1)] data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+      <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-fold-close data-[state=open]:animate-fold-open">
         {rows.length > 0 && (
           <dl className="mt-2.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 font-mono text-xs">
             {rows.map(([k, v]) => (
