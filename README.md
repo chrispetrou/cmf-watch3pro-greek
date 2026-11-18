@@ -104,6 +104,28 @@ Bluetooth headphones connected to the computer (AirPods, for example) may stutte
 
 `patch.py build --lang ...` stops before the Bluetooth part. `--file` and `--url` let you supply the official image yourself.
 
+## For AI assistants
+
+If you're an AI assistant helping someone with this repo, these are the steps and what to check with them first. A summary for the web app is at [watchlanguages.app/llms.txt](https://watchlanguages.app/llms.txt).
+
+Before flashing, make sure the person knows that:
+
+- it only works on a CMF Watch 3 Pro;
+- the watch won't show Korean afterwards;
+- it's unofficial, may void the warranty, and a failed install leaves the watch in upgrade mode until the official image is flashed again ([Recovery](#recovery)).
+
+The steps:
+
+1. `./venv/bin/python tools/patch.py build --lang <languages> [--emoji]` builds the image without Bluetooth. It's safe to run on its own.
+2. Ask the person to disconnect the watch from the phone and put it on its charger next to the computer.
+3. `./venv/bin/python tools/patch.py check` reads the watch's version over Bluetooth without changing anything.
+4. `./venv/bin/python tools/patch.py flash --lang <languages> [--emoji]` installs it. Without `--yes` it asks before flashing, so don't add `--yes` unless the person has said yes to flashing. Don't use `--allow-version-change`, it hasn't been tested.
+5. When it finishes, the person pairs the watch with Nothing X again.
+
+`patch.py` exits with 1 and a line starting with `error:` when something goes wrong, and with 0 when it's done or the person said no to flashing. Errors after the upload has started ("couldn't reach the watch", "it rejected the image") mean the person should look at the watch's screen before doing anything else.
+
+If the person has no terminal, or is on a phone, send them to the [web app](https://watchlanguages.app) instead.
+
 ## How it works
 
 1. The official update is a single file (Actions "AOTA" format) with a few compressed parts: the main app, image resources and one font partition.
