@@ -666,7 +666,11 @@ export default function App() {
       <header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur-md backdrop-saturate-150">
         <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between gap-3 px-6 max-sm:px-4">
           <a className="flex items-center gap-2.5 font-semibold tracking-tight whitespace-nowrap" href="./">
-            <span className="grid size-6 place-items-center rounded-full bg-foreground"><i className="size-3 rounded-full border-[1.5px] border-background" /></span>
+            {/* The mark: the empty box the watch draws for a missing letter, with the letter arriving in orange. */}
+            <svg className="size-6" viewBox="0 0 32 32" aria-hidden="true">
+              <path d="M17 4H8a4 4 0 0 0-4 4v16a4 4 0 0 0 4 4h16a4 4 0 0 0 4-4v-9" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+              <rect x="21" y="3" width="8" height="8" rx="1.5" className="fill-brand" />
+            </svg>
             Watch Languages
             <Badge variant="outline" className="rounded-full font-medium text-muted-foreground max-sm:hidden">{t.unofficial}</Badge>
           </a>
