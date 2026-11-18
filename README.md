@@ -25,7 +25,7 @@ The CMF Watch 3 Pro can only display the characters in its built-in font. That f
 
 This repo adds the missing letters to the official firmware's font and flashes it to the watch over Bluetooth from a computer, without going through the Nothing X app. It started as a Greek fix, which I've been running on my own watch (firmware 1.0.1.77), and now takes a list of languages. It can also add about 450 [emoji](#emoji) the watch doesn't have.
 
-https://github.com/user-attachments/assets/744b2420-38c5-4d07-858b-6cd9dedf29c9
+https://github.com/user-attachments/assets/b917cd21-0290-46ff-8acf-85bc15a9db70
 
 > [!WARNING]
 > This is an unofficial project and isn't affiliated with or endorsed by Nothing Technology Ltd. or CMF. The product names are only used to say what it works with. Flashing modified firmware may void your warranty, and a mistake can leave the watch in its upgrade/recovery mode. The steps to recover from that are below, but there are no guarantees. Use it at your own risk.
