@@ -1,4 +1,4 @@
-// The band at the bottom of the page: a grid of empty boxes, the way the watch shows letters it
+// Next to the title: a grid of empty boxes, the way the watch shows letters it
 // doesn't have, that turn into Greek, Georgian and Armenian letters one at a time.
 // Decorative only: hidden from screen readers, runs only while on screen, still with reduced motion.
 import { useEffect, useRef } from "react";
@@ -27,8 +27,8 @@ function setCell(el: HTMLElement, letter: string | null, animate: boolean) {
   }
 }
 
-/** "band" sits under the footer and fades in from the top; "patch" fills its parent and fades at every edge. */
-export function GlyphField({ variant = "band" }: { variant?: "band" | "patch" }) {
+/** Fills its parent and fades out at every edge. */
+export function GlyphField() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -74,5 +74,5 @@ export function GlyphField({ variant = "band" }: { variant?: "band" | "patch" })
     return () => { clearInterval(timer); ro.disconnect(); io.disconnect(); };
   }, []);
 
-  return <div ref={ref} className={`gf gf-${variant}`} aria-hidden="true" />;
+  return <div ref={ref} className="gf" aria-hidden="true" />;
 }

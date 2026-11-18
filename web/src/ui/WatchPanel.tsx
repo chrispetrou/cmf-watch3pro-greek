@@ -8,28 +8,26 @@ import type { Screen } from "./screens";
 
 type Props = { screen: Screen; phase: Phase | null; chosen: Language[]; pct: number; watchName: string | null; watchFw: string | null };
 
-type Caption = { s: string; tone: "" | "on" | "ok" | "warn" | "err"; sub: string };
+type Caption = { s: string; tone: "" | "on" | "ok" | "warn" | "err" };
 
 const DOT: Record<Caption["tone"], string> = { "": "bg-faint", on: "bg-brand", ok: "bg-ok", warn: "bg-warn", err: "bg-err" };
 
-function caption({ screen, phase, chosen, watchName, watchFw }: Props, p: Strings["panel"]): Caption {
+function caption({ screen, phase }: Props, p: Strings["panel"]): Caption {
   switch (screen) {
     case "choose":
-      return { s: p.livePreview, tone: "on", sub: chosen.length ? p.livePreviewSub : p.pickToSee };
-    case "searching": return { s: phase === "connecting" ? p.connecting : p.searching, tone: "on", sub: p.keepClose };
+      return { s: p.livePreview, tone: "on" };
+    case "searching": return { s: phase === "connecting" ? p.connecting : p.searching, tone: "on" };
     case "pairing":
-      return phase === "pairing"
-        ? { s: p.pairing, tone: "on", sub: p.acceptRequest }
-        : { s: p.connecting, tone: "on", sub: phase === "reading" ? p.reading : p.loggingIn };
-    case "connected": return { s: p.connected, tone: "ok", sub: watchName ?? "" };
-    case "mismatch": return { s: p.connected, tone: "warn", sub: p.hasFw(watchFw ?? "") };
-    case "transfer": return { s: p.receiving, tone: "on", sub: p.onCharger };
-    case "installing": return { s: p.installing, tone: "on", sub: p.mayGoDark };
-    case "done": return { s: p.ready, tone: "ok", sub: p.pairToFinish };
-    case "recovery": return { s: p.recovery, tone: "warn", sub: p.waitingOfficial };
-    case "lost": return { s: p.disconnected, tone: "err", sub: p.bringCloser };
-    case "unsupported": return { s: p.notConnected, tone: "", sub: p.browserOnly };
-    default: return { s: p.notConnected, tone: "", sub: p.nothingChanges };
+      return { s: phase === "pairing" ? p.pairing : p.connecting, tone: "on" };
+    case "connected": return { s: p.connected, tone: "ok" };
+    case "mismatch": return { s: p.connected, tone: "warn" };
+    case "transfer": return { s: p.receiving, tone: "on" };
+    case "installing": return { s: p.installing, tone: "on" };
+    case "done": return { s: p.ready, tone: "ok" };
+    case "recovery": return { s: p.recovery, tone: "warn" };
+    case "lost": return { s: p.disconnected, tone: "err" };
+    case "unsupported": return { s: p.notConnected, tone: "" };
+    default: return { s: p.notConnected, tone: "" };
   }
 }
 
@@ -100,10 +98,9 @@ export function WatchPanel(props: Props) {
             <span className="screen"><Face {...props} /></span></span></span>
         </div>
       </div>
-      <div className="mt-4.5 max-w-[30ch] text-center max-lg:mt-1.5" aria-live="polite">
-        <span className="inline-flex items-center gap-1.5 text-[13px] font-medium"><i className={cn("size-1.5 rounded-full", DOT[c.tone])} />{c.s}</span>
-        <p className="mt-1 text-[13px] text-muted-foreground">{c.sub}</p>
-      </div>
+      {props.screen !== "choose" && <div className="mt-4.5 max-w-[30ch] text-center max-lg:mt-1.5" aria-live="polite">
+        <span className="inline-flex items-center gap-1.5 text-sm font-medium"><i className={cn("size-1.5 rounded-full", DOT[c.tone])} />{c.s}</span>
+      </div>}
     </div>
   );
 }

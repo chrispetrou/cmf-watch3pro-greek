@@ -10,7 +10,7 @@ export type Tone = "neutral" | "ok" | "warn" | "err";
 
 const TILE: Record<Tone, string> = {
   neutral: "bg-muted text-muted-foreground border border-border",
-  ok: "bg-ok-soft text-ok",
+  ok: "text-ok",
   warn: "bg-warn-soft text-warn",
   err: "bg-err-soft text-err",
 };
@@ -44,13 +44,13 @@ export function Notice({ tone = "neutral", icon, title, children, className }: {
 export function Details({ rows = [], log }: { rows?: [string, string][]; log: string[] }) {
   const { t } = useT();
   return (
-    <Collapsible className="mt-3 text-[13px]">
+    <Collapsible className="mt-3 text-sm">
       <CollapsibleTrigger className="hit group flex items-center gap-1 rounded text-muted-foreground hover:text-foreground">
         <ChevronRight className="size-3.5 transition-transform group-data-[state=open]:rotate-90" />
         {t.details}
       </CollapsibleTrigger>
       {/* Height follows Radix's measured content height, so it opens and closes smoothly. */}
-      <CollapsibleContent className="overflow-hidden duration-200 ease-[cubic-bezier(0.2,0,0,1)] data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+      <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-fold-close data-[state=open]:animate-fold-open">
         {rows.length > 0 && (
           <dl className="mt-2.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 font-mono text-xs">
             {rows.map(([k, v]) => (
@@ -79,8 +79,8 @@ export function FileRow({ tone = "neutral", icon, name, mono, meta, action, chil
     <div className={cn("flex items-center gap-3 rounded-xl border bg-background px-3.5 py-3", tone === "err" && "border-err/40", className)}>
       <IconTile tone={tone}>{icon}</IconTile>
       <div className="min-w-0 flex-1">
-        <div className={cn("truncate", mono ? "font-mono text-[13px]" : "text-sm font-medium")} title={typeof name === "string" ? name : undefined}>{name}</div>
-        {meta && <div className="mt-0.5 flex flex-wrap gap-x-3.5 text-[13px] text-muted-foreground [&_b]:font-medium [&_b]:text-foreground">{meta}</div>}
+        <div className={cn("truncate", mono ? "font-mono text-sm" : "text-sm font-medium")} title={typeof name === "string" ? name : undefined}>{name}</div>
+        {meta && <div className="mt-0.5 flex flex-wrap gap-x-3.5 text-sm text-muted-foreground [&_b]:font-medium [&_b]:text-foreground">{meta}</div>}
         {children}
       </div>
       {action}
@@ -93,7 +93,7 @@ export function Actions({ note, children }: { note?: ReactNode; children: ReactN
   return (
     <div className="mt-5 flex flex-wrap items-center gap-2 max-sm:[&>button]:flex-1 max-sm:[&>a]:flex-1">
       {children}
-      {note && <div className="ml-2 min-w-0 flex-1 text-[13px] text-muted-foreground max-sm:ml-0 max-sm:basis-full">{note}</div>}
+      {note && <div className="ml-2 min-w-0 flex-1 text-sm text-muted-foreground max-sm:ml-0 max-sm:basis-full">{note}</div>}
     </div>
   );
 }
