@@ -381,15 +381,12 @@ export default function App() {
   // ------------------------------------------------------------ step bodies
   const chooseBody = (
     <>
-      <Lede>{t.chooseLede}</Lede>
       <LanguagePicker languages={LANGS} selected={sel} onToggle={(id) => { setRestoreOnly(false); setSel({ ...sel, [id]: !sel[id] }); }} />
       <EmojiOption checked={emoji} onChange={(v) => { setRestoreOnly(false); setEmoji(v); }} />
-      <p className="mt-3 flex gap-2 text-[13px] text-muted-foreground"><Info className="mt-0.5 size-3.5 shrink-0" />{t.noKorean}</p>
+      <p className="mt-3 flex gap-2 text-sm text-muted-foreground"><Info className="mt-0.5 size-3.5 shrink-0" />{t.noKorean}</p>
       <Actions note={LANGS.some((l) => !l.tested) && <>{t.notTestedNote}{" "}<a className="hit text-foreground underline underline-offset-3" href={`${REPO}/issues`}>{t.tellUs}</a></>}>
         <Button disabled={parts.length === 0} onClick={() => { setRestoreOnly(false); if (fwOk) startBuild(fwOk, parts); else setScreen("fwEmpty"); }}>{t.continue}</Button>
       </Actions>
-      <button type="button" className="hit mt-4 text-[13px] text-muted-foreground underline decoration-input underline-offset-3 hover:text-foreground hover:decoration-current"
-        onClick={() => { setRestoreOnly(true); if (fwOk) startBuild(fwOk, []); else setScreen("fwEmpty"); }}>{t.removeAll}</button>
     </>
   );
 
@@ -400,7 +397,7 @@ export default function App() {
         <Button variant="outline" asChild>
           <a href={release?.url ?? "https://github.com/spike0en/nothing_archive"}><Download />{t.download(expected)}</a>
         </Button>
-        <span className="text-[13px] text-muted-foreground">{t.downloadNote}</span>
+        <span className="text-sm text-muted-foreground">{t.downloadNote}</span>
       </div>
       <input ref={fileInput} type="file" accept=".bin" hidden
         onChange={(e) => { takeFile(e.target.files?.[0]); e.target.value = ""; }} />
@@ -412,9 +409,9 @@ export default function App() {
             {t.drop}{" "}
             <button type="button" className="hit font-medium underline decoration-input underline-offset-3 hover:decoration-current" onClick={pickFile}>{t.chooseFile}</button>
           </p>
-          <p className="mt-1 text-[13px] text-muted-foreground">{t.dropHint}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t.dropHint}</p>
           {DEMO !== null && (
-            <button type="button" className="hit mt-1 text-[13px] underline underline-offset-3" onClick={() => {
+            <button type="button" className="hit mt-1 text-sm underline underline-offset-3" onClick={() => {
               const demo: FirmwareOk = { ok: true, file: new File([], `CMF_JX402_08_ATS3089C_V${expected}_GPS_V6.bin`), version: expected, board: "JX402_08", sizeMb: 45.1 };
               setFw(demo);
               startBuild(demo);
@@ -424,7 +421,7 @@ export default function App() {
       )}
       {screen === "fwChecking" && fw && (
         <FileRow icon={<Spinner />} name={fw.file.name} mono
-          action={<span className="text-[13px] text-muted-foreground tabular-nums">{t.checking(checkPct)}</span>}>
+          action={<span className="text-sm text-muted-foreground tabular-nums">{t.checking(checkPct)}</span>}>
           <Progress value={checkPct} className="mt-2 h-1 [&>[data-slot=progress-indicator]]:bg-brand" />
         </FileRow>
       )}
@@ -464,14 +461,14 @@ export default function App() {
       {screen === "fwValid" && buildFresh && built && !built.result && (restoreOnly ? (
         <FileRow className="mt-3" tone="ok" icon={<Check />} name={t.officialUnchanged} meta={t.officialUnchangedMeta} />
       ) : (
-        <p className="mt-3 text-[13px] text-muted-foreground">{t.demoNoBuild}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t.demoNoBuild}</p>
       ))}
       {screen === "fwWrong" && fw && !fw.ok && (
         <>
           <FileRow tone="err" icon={<X />} name={fw.file.name} mono
             meta={<span className="text-err">{t.problems[fw.problem] ?? fw.problem}</span>}
             action={<Button variant="outline" size="sm" onClick={pickFile}>{t.chooseAnother}</Button>} />
-          <p className="mt-2.5 text-[13px] text-muted-foreground">{t.wrongHint(expected)}</p>
+          <p className="mt-2.5 text-sm text-muted-foreground">{t.wrongHint(expected)}</p>
         </>
       )}
       <Actions>
@@ -491,7 +488,7 @@ export default function App() {
                   onCheckedChange={() => setChecks(checks.map((c, j) => (j === i ? !c : c)))} />
                 <span className="min-w-0">
                   <span className="block font-medium">{title}</span>
-                  <span className="mt-0.5 block text-[13.5px] text-muted-foreground">{sub}</span>
+                  <span className="mt-0.5 block text-sm text-muted-foreground">{sub}</span>
                 </span>
               </label>
             ))}
@@ -527,7 +524,7 @@ export default function App() {
       {screen === "connected" && watch && fwOk && (
         <>
           <Notice tone="ok" icon={<Check />} title={t.connected}>
-            <dl className="mt-1.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0.5 text-[13px]">
+            <dl className="mt-1.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0.5 text-sm">
               <dt>{t.watch}</dt><dd className="truncate text-foreground">{watch.name}</dd>
               <dt>{t.watchFw}</dt><dd className="text-foreground">{watch.firmware}</dd>
               <dt>{t.updateFile}</dt><dd className="text-foreground">{fwOk.version}</dd>
@@ -555,7 +552,7 @@ export default function App() {
         <>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-3xl font-semibold tracking-tight tabular-nums">{pct}%</span>
-            <span className="flex gap-4 text-[13px] text-muted-foreground tabular-nums max-sm:flex-col max-sm:items-end max-sm:gap-0">
+            <span className="flex gap-4 text-sm text-muted-foreground tabular-nums max-sm:flex-col max-sm:items-end max-sm:gap-0">
               <span>{t.sentMb((sent / 1e6).toFixed(1))}</span>
               <span>{t.eta(etaMinutes(startedAt, pct))}</span>
             </span>
@@ -582,7 +579,7 @@ export default function App() {
         <>
           <Lede className="mb-2.5">{t.installingText}</Lede>
           <Indeterminate />
-          <p className="text-[13px] text-muted-foreground tabular-nums">{restartLeft ? t.checkingIn(restartLeft) : restartLeft === 0 ? t.checkingNow : ""}</p>
+          <p className="text-sm text-muted-foreground tabular-nums">{restartLeft ? t.checkingIn(restartLeft) : restartLeft === 0 ? t.checkingNow : ""}</p>
           {details()}
         </>
       )}
@@ -605,14 +602,16 @@ export default function App() {
               </Actions>
             </div>
           )}
-          <p className="mt-5 font-medium">{t.pairAgain}</p>
-          <ol className="mt-2.5 list-decimal space-y-1 pl-5 text-muted-foreground marker:text-faint">
-            {t.pairSteps.map((s) => <li key={s} className="pl-1">{s}</li>)}
-          </ol>
-          <Actions>
-            <Button onClick={startOver}>{t.startOver}</Button>
-            <Button variant="ghost" asChild><a href={`${REPO}#readme`}>{t.readGuide}</a></Button>
-          </Actions>
+          <div className="mt-4 rounded-xl border px-4 py-3.5">
+            <p className="font-semibold tracking-tight">{t.pairAgain}</p>
+            <ol className="mt-2 list-decimal space-y-1 pl-5 marker:text-muted-foreground">
+              {t.pairSteps.map((s) => <li key={s} className="pl-1">{s}</li>)}
+            </ol>
+          </div>
+          <p className="mt-4 flex gap-4 text-sm text-muted-foreground">
+            <button type="button" className="hit underline decoration-input underline-offset-3 hover:text-foreground hover:decoration-current" onClick={startOver}>{t.startOver}</button>
+            <a className="hit underline decoration-input underline-offset-3 hover:text-foreground hover:decoration-current" href={`${REPO}#readme`}>{t.readGuide}</a>
+          </p>
         </>
       )}
       {screen === "lost" && (
@@ -694,32 +693,31 @@ export default function App() {
           <div className="pointer-events-none flex w-full max-w-md flex-col items-center rounded-2xl border-2 border-dashed border-brand bg-background px-6 py-12 text-center">
             <FileUp className="size-7 text-brand" />
             <p className="mt-3 font-medium">{t.dropAnywhere}</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">{t.dropHint}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t.dropHint}</p>
           </div>
         </div>
       )}
       {link.simulated && (
-        <div className="border-b bg-muted px-6 py-2 text-center text-[13px] text-muted-foreground">
+        <div className="border-b bg-muted px-6 py-2 text-center text-sm text-muted-foreground">
           <b className="font-medium text-foreground">{t.demo}</b> {t.demoBanner}
         </div>
       )}
 
-      <div className="mx-auto max-w-[1120px] border-x max-sm:border-x-0">
+      <div className="mx-auto max-w-[1120px]">
         <section className="grid grid-cols-[minmax(0,1fr)_400px] max-lg:grid-cols-1">
-          <div className="px-6 pt-14 pb-10 max-sm:px-4 max-sm:pt-8 max-sm:pb-6">
+          <div className="px-6 pt-10 pb-6 max-sm:px-4 max-sm:pt-6 max-sm:pb-4">
             {/* Audiowide only has Latin letters, so the Greek title uses Tektur rather than mixing fonts. */}
-            <h1 className={cn("max-w-[20ch] text-[clamp(26px,3.6vw,36px)] leading-[1.15]", uiLang === "en"
+            <h1 className={cn("max-w-[20ch] text-[clamp(24px,3vw,30px)] leading-[1.2]", uiLang === "en"
               ? "font-display font-normal tracking-[-0.01em]"
               : "font-display-greek font-semibold tracking-[-0.01em]")}>{t.heroTitle}</h1>
-            <p className="mt-3.5 max-w-[54ch] text-[17px] text-muted-foreground max-sm:text-[15.5px]">{t.heroText(t.heroLangs)}</p>
+            <p className="mt-2.5 max-w-[60ch] text-base text-muted-foreground">{t.heroText(t.heroLangs)}</p>
           </div>
-          {/* Above the watch column: the same boxes turning into letters as at the bottom. */}
-          <div className="relative max-lg:hidden"><GlyphField variant="patch" /></div>
+          {/* Above the watch column: empty boxes turning into letters, which is what the app does. */}
+          <div className="relative max-lg:hidden"><GlyphField /></div>
         </section>
 
-        <div className="rule" />
         <main className="grid grid-cols-[minmax(0,1fr)_400px] max-lg:grid-cols-1">
-          <section className="min-w-0 border-r px-6 pt-8 pb-12 max-lg:border-r-0 max-sm:px-4">
+          <section className="min-w-0 px-6 pt-4 pb-12 max-sm:px-4">
             {special ?? (
               <ol>
                 {steps.map((s, i) => {
@@ -755,14 +753,20 @@ export default function App() {
                 })}
               </ol>
             )}
+            {/* For people who want to undo an earlier install: kept out of the way of step 1's Continue. */}
+            {screen === "choose" && !special && (
+              <p className="mt-2 pl-10 text-sm text-muted-foreground max-sm:pl-9">
+                {t.alreadyInstalled}{" "}
+                <button type="button" className="hit font-medium text-foreground underline decoration-input underline-offset-3 hover:decoration-current"
+                  onClick={() => { setRestoreOnly(true); if (fwOk) startBuild(fwOk, []); else setScreen("fwEmpty"); }}>{t.restoreOfficial}</button>
+              </p>
+            )}
           </section>
           <aside className="max-lg:order-first max-lg:border-b">
             <WatchPanel screen={screen} phase={phase} chosen={emoji ? [...chosen, EMOJI_PREVIEW] : chosen} pct={pct} watchName={watch?.name ?? null} watchFw={watch?.firmware ?? null} />
           </aside>
         </main>
-        <div className="rule" />
-
-        <footer className="[view-transition-name:footer] flex flex-wrap justify-between gap-x-6 gap-y-4 px-6 pt-6 pb-10 text-[13px] text-muted-foreground max-sm:px-4">
+        <footer className="[view-transition-name:footer] mx-6 flex border-t max-sm:mx-4 flex-wrap justify-between gap-x-6 gap-y-4 pt-6 pb-10 text-sm text-muted-foreground">
           <p className="max-w-[60ch]">{t.footer}</p>
           <nav className="flex gap-4.5" aria-label="Project links">
             <a className="hit hover:text-foreground" href={`${REPO}#readme`}>{t.guide}</a>
@@ -770,7 +774,6 @@ export default function App() {
             <a className="hit hover:text-foreground" href={REPO}>GitHub</a>
           </nav>
         </footer>
-        <GlyphField />
       </div>
     </I18n.Provider>
   );

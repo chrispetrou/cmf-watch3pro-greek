@@ -99,7 +99,7 @@ export function WatchPanel(props: Props) {
         </div>
       </div>
       {props.screen !== "choose" && <div className="mt-4.5 max-w-[30ch] text-center max-lg:mt-1.5" aria-live="polite">
-        <span className="inline-flex items-center gap-1.5 text-[13px] font-medium"><i className={cn("size-1.5 rounded-full", DOT[c.tone])} />{c.s}</span>
+        <span className="inline-flex items-center gap-1.5 text-sm font-medium"><i className={cn("size-1.5 rounded-full", DOT[c.tone])} />{c.s}</span>
       </div>}
     </div>
   );

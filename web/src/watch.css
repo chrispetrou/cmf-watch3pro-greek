@@ -1,8 +1,5 @@
 /* The watch preview: gradient artwork, easier to keep as plain CSS than as utilities. */
 .stage { position: relative; width: 100%; display: grid; place-items: center; padding: 28px 0 20px; isolation: isolate; }
-.stage::before { content: ""; position: absolute; inset: -32px -24px; z-index: -1;
-  background-image: radial-gradient(var(--input) 1px, transparent 1px); background-size: 16px 16px;
-  mask-image: radial-gradient(closest-side, #000 30%, transparent); }
 .watch { position: relative; width: 236px; height: 316px; }
 .strap { position: absolute; left: 50%; width: 118px; height: 92px; margin-left: -59px; background: var(--strap); }
 .strap.t { top: 0; border-radius: 26px 26px 10px 10px; }
@@ -69,11 +66,9 @@
 @keyframes vt-out { to { opacity: 0; } }
 @keyframes vt-in { from { opacity: 0; transform: translateY(-4px); } }
 
-/* GlyphField: the band at the bottom of the page where empty boxes turn into letters. */
-.gf { display: grid; grid-auto-rows: 30px; overflow: hidden; user-select: none; pointer-events: none; }
-.gf-band { height: 150px; mask-composite: intersect;
-  mask-image: linear-gradient(to bottom, transparent, #000 45%), linear-gradient(to right, transparent, #000 15%, #000 85%, transparent); }
-.gf-patch { position: absolute; inset: 0; align-content: center; mask-image: radial-gradient(closest-side, #000 35%, transparent); }
+/* GlyphField: next to the title, empty boxes turn into letters. */
+.gf { position: absolute; inset: 0; display: grid; grid-auto-rows: 30px; align-content: center; overflow: hidden;
+  user-select: none; pointer-events: none; mask-image: radial-gradient(closest-side, #000 35%, transparent); }
 .gf > span { display: grid; place-items: center; font-size: 17px; font-weight: 500; line-height: 1; color: var(--faint); opacity: 0.45;
   transition: color 1.2s ease-out, opacity 1.2s ease-out; }
 /* The box the watch draws for a missing letter. */

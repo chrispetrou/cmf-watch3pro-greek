@@ -1,11 +1,10 @@
 // Language list that stays usable as languages are added: one compact row each, and from
 // SEARCH_FROM languages on, a search field, a scrolling list and chips for what's selected.
 import { useId, useMemo, useState } from "react";
-import { Info, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useT } from "@/i18n";
 import type { Language } from "@/lib/languages";
 import { cn } from "@/lib/utils";
@@ -31,7 +30,6 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
   }, [languages, query]);
 
   return (
-    <TooltipProvider>
     <div>
       {many && (
         <>
@@ -43,7 +41,7 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
           {chosen.length > 0 && (
             <div className="mb-2.5 flex flex-wrap gap-1.5" aria-label={t.selected}>
               {chosen.map((l) => (
-                <Badge key={l.id} asChild variant="outline" className="h-7 cursor-pointer gap-1.5 rounded-full bg-muted pr-2 pl-2.5 text-[13px]">
+                <Badge key={l.id} asChild variant="outline" className="h-7 cursor-pointer gap-1.5 rounded-full bg-muted pr-2 pl-2.5 text-sm">
                   <button type="button" onClick={() => onToggle(l.id)} aria-label={t.remove(l.en)}>
                     <span>{label(l)}</span><X className="text-muted-foreground" />
                   </button>
@@ -57,16 +55,11 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
         {shown.map((l) => (
           <label key={l.id} htmlFor={`${id}-${l.id}`}
             className="flex cursor-pointer items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted max-sm:px-3.5 max-sm:py-3">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button type="button" className="hit -mr-1 inline-flex shrink-0 text-faint transition-colors hover:text-muted-foreground"
-                  aria-label={l.tested ? t.tested : t.notTested} onClick={(e) => e.preventDefault()}>
-                  <Info className="size-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>{l.tested ? t.testedLong : t.notTestedNote}</TooltipContent>
-            </Tooltip>
-            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-tight">{label(l)}</span>
+            {/* Only the exceptions are marked; tested is the norm. */}
+            <span className="flex min-w-0 flex-1 items-center gap-2">
+              <span className="truncate text-base font-semibold tracking-tight">{label(l)}</span>
+              {!l.tested && <Badge variant="outline" className="rounded-full font-medium text-muted-foreground">{t.notTested}</Badge>}
+            </span>
             <Switch id={`${id}-${l.id}`} checked={!!selected[l.id]} onCheckedChange={() => onToggle(l.id)} aria-label={l.en} />
           </label>
         ))}
@@ -77,7 +70,6 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
         )}
       </div>
     </div>
-    </TooltipProvider>
   );
 }
 
@@ -88,7 +80,7 @@ export function EmojiOption({ checked, onChange }: { checked: boolean; onChange:
   return (
     <label htmlFor={id} className="mt-2.5 flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 transition-colors hover:bg-muted max-sm:px-3.5 max-sm:py-3">
       <span className="min-w-0 flex-1">
-        <span className="block text-[15px] font-semibold tracking-tight">{t.emojiTitle}</span>
+        <span className="block text-base font-semibold tracking-tight">{t.emojiTitle}</span>
         <span className="block text-sm text-muted-foreground">{t.emojiText}</span>
       </span>
       <Switch id={id} checked={checked} onCheckedChange={onChange} aria-label={t.emojiTitle} />
