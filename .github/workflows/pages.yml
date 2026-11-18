@@ -1,6 +1,7 @@
 # Builds and tests the web app in web/. Actions are pinned to commit SHAs, since tags can be moved;
 # Dependabot keeps the pins up to date. Pushes to main also publish it to GitHub Pages;
 # pull requests only build and test. Can be started by hand from the Actions tab.
+# Every pull request runs it, whatever it changes: "build" is a required check for merging into main.
 name: Deploy web app to GitHub Pages
 
 on:
@@ -8,7 +9,6 @@ on:
     branches: [main]
     paths: ["web/**", "tools/**", ".github/workflows/pages.yml"]
   pull_request:
-    paths: ["web/**", "tools/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 # Nothing by default; each job gets only what it needs.
