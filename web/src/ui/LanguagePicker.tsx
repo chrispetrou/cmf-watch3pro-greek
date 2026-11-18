@@ -45,7 +45,7 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
               {chosen.map((l) => (
                 <Badge key={l.id} asChild variant="outline" className="h-7 cursor-pointer gap-1.5 rounded-full bg-muted pr-2 pl-2.5 text-[13px]">
                   <button type="button" onClick={() => onToggle(l.id)} aria-label={t.remove(l.en)}>
-                    <span lang={l.code}>{l.name}</span><X className="text-muted-foreground" />
+                    <span>{label(l)}</span><X className="text-muted-foreground" />
                   </button>
                 </Badge>
               ))}
@@ -59,16 +59,14 @@ export function LanguagePicker({ languages, selected, onToggle }: Props) {
             className="flex cursor-pointer items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted max-sm:px-3.5 max-sm:py-3">
             <Tooltip>
               <TooltipTrigger asChild>
-                <button type="button" className="hit -mr-1 inline-flex shrink-0 cursor-help text-faint transition-colors hover:text-muted-foreground"
+                <button type="button" className="hit -mr-1 inline-flex shrink-0 text-faint transition-colors hover:text-muted-foreground"
                   aria-label={l.tested ? t.tested : t.notTested} onClick={(e) => e.preventDefault()}>
                   <Info className="size-4" />
                 </button>
               </TooltipTrigger>
               <TooltipContent>{l.tested ? t.testedLong : t.notTestedNote}</TooltipContent>
             </Tooltip>
-            {/* The name in the page's language first, then the native one unless they're the same (Ελληνικά on the Greek page). */}
-            <span className="text-[15px] font-semibold tracking-tight">{label(l)}</span>
-            <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground" lang={l.code}>{label(l) === l.name ? "" : l.name}</span>
+            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-tight">{label(l)}</span>
             <Switch id={`${id}-${l.id}`} checked={!!selected[l.id]} onCheckedChange={() => onToggle(l.id)} aria-label={l.en} />
           </label>
         ))}

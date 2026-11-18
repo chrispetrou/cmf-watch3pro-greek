@@ -707,10 +707,10 @@ export default function App() {
       <div className="mx-auto max-w-[1120px] border-x max-sm:border-x-0">
         <section className="grid grid-cols-[minmax(0,1fr)_400px] max-lg:grid-cols-1">
           <div className="px-6 pt-14 pb-10 max-sm:px-4 max-sm:pt-8 max-sm:pb-6">
-            {/* Audiowide only has Latin letters, so the Greek title stays in Inter rather than mixing fonts. */}
-            <h1 className={cn("max-w-[20ch] leading-[1.15]", uiLang === "en"
-              ? "font-display text-[clamp(26px,3.6vw,36px)] font-normal tracking-[-0.01em]"
-              : "text-[clamp(28px,4vw,40px)] font-semibold tracking-[-0.035em]")}>{t.heroTitle}</h1>
+            {/* Audiowide only has Latin letters, so the Greek title uses Tektur rather than mixing fonts. */}
+            <h1 className={cn("max-w-[20ch] text-[clamp(26px,3.6vw,36px)] leading-[1.15]", uiLang === "en"
+              ? "font-display font-normal tracking-[-0.01em]"
+              : "font-display-greek font-semibold tracking-[-0.01em]")}>{t.heroTitle}</h1>
             <p className="mt-3.5 max-w-[54ch] text-[17px] text-muted-foreground max-sm:text-[15.5px]">{t.heroText(t.heroLangs)}</p>
           </div>
           {/* Above the watch column: the same boxes turning into letters as at the bottom. */}

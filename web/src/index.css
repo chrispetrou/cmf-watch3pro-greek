@@ -67,6 +67,8 @@
 @theme inline {
   --font-sans: "Inter Variable", Inter, "Noto Sans Georgian Variable", "Noto Sans Armenian Variable", system-ui, sans-serif;
   --font-display: Audiowide, "Inter Variable", Inter, system-ui, sans-serif;
+  /* Audiowide has no Greek letters; Tektur is the closest wide, techno face that does. */
+  --font-display-greek: "Tektur Variable", "Inter Variable", Inter, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -118,6 +120,8 @@
 
 @layer base {
   * { @apply border-border outline-ring/50; }
+  /* Tailwind 4 leaves buttons on the default arrow; anything clickable gets the hand. */
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: pointer; }
   body {
     @apply bg-background text-foreground antialiased;
     font-size: 15px;
