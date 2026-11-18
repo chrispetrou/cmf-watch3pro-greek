@@ -9,9 +9,10 @@ What's real so far:
 - "More emoji": the `--emoji` option (tools/emoji.py), from `public/emoji.json`;
 - "Remove the languages and emoji": installs the official file unchanged (the same path as the recovery
   restore), to undo the patch or get Korean back (tested: Korean works again afterwards);
-- checking the firmware file (same checks as `tools/patch.py`: AOTA header, CRCs, board, version);
-- the download link, from the Nothing Archive list (Nothing's CDN doesn't allow the browser to
-  fetch the file itself, so the user downloads it);
+- checking the firmware file: the same structure checks as `tools/patch.py` (AOTA header, CRCs,
+  board), then its SHA-256 must match an official release in `OFFICIAL` (`src/lib/firmware.ts`);
+- the download link, to Nothing's CDN for the newest release in `OFFICIAL` (the CDN doesn't allow
+  the browser to fetch the file itself, so the user downloads it);
 - connecting, pairing and reading the watch's firmware version over Web Bluetooth;
 - building the patched image, in a Web Worker with [Pyodide](https://pyodide.org). It runs the
   same Python as the command-line tool (`tools/build_firmware.py`), so the result is byte for byte
@@ -36,8 +37,7 @@ It's hosted at https://watchlanguages.app (GitHub Pages with a custom domain; wa
 the old github.io address redirect there), deployed from `main` by
 `.github/workflows/pages.yml` (build, tests, GitHub Pages). Everything runs in the visitor's browser:
 GitHub Pages only serves the files, including the fonts (bundled, no Google Fonts) and Pyodide.
-The only other request is the Nothing Archive's release list on raw.githubusercontent.com, to
-find the latest firmware version.
+The only other request is Cloudflare Web Analytics.
 
 Needs Chrome, Edge or another browser built on Chrome, on a computer or an Android phone. Tested
 on macOS with Chrome and Dia; Windows, Linux, ChromeOS and Android should work but are untested
@@ -98,14 +98,19 @@ default). The technical log stays in English.
 
 - No server side: the page is static files, the firmware file stays in the browser, and the pairing
   key is kept in the browser's local storage for this site only.
+- The watch doesn't check signatures, so the page only works from Nothing's own files: a firmware
+  file is accepted only if its SHA-256 is in `OFFICIAL` (`src/lib/firmware.ts`). A tampered or
+  "pre-patched" file is refused even if its checksums were fixed up, and so is a new release until
+  its hash is added (see docs/updating.md).
 - A Content Security Policy (added to the built page by `vite.config.ts`) only allows scripts, styles
-  and fonts from this site, and outside requests only to the Nothing Archive list on
-  raw.githubusercontent.com. `eval` is allowed because Pyodide needs it in the build worker.
-- The release list is third-party data, so its download link is only shown if it points to Nothing's
-  own server, and its version must look like a version number.
-- The deploy workflow gives the build job read access only. Only the deploy job can publish.
+  and fonts from this site, plus Cloudflare Web Analytics. `eval` is allowed because Pyodide needs
+  it in the build worker.
+- The page won't run inside another site's frame (`src/main.tsx`); it shows a link to open it in
+  its own tab instead.
+- The deploy workflow gives the build job read access only. Only the deploy job can publish. Its
+  actions are pinned to commit SHAs, and `npm ci --ignore-scripts` skips the packages' install scripts.
 - Dependabot opens weekly update PRs for the npm packages (minor and patch versions only) and the
-  workflow's actions. Every PR that touches `web/` or `tools/` is built and tested before merging.
+  workflow's actions, for releases at least a week old. Read the lockfile changes before merging. Every PR that touches `web/` or `tools/` is built and tested before merging.
 - The firmware build tests are skipped in CI because no firmware is in the repo. Before merging a
   Pyodide update, run `npm test` locally with the official image in `firmware/`: the patched image
   must keep the same sha256.

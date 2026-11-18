@@ -1,4 +1,5 @@
-# Builds and tests the web app in web/. Pushes to main also publish it to GitHub Pages;
+# Builds and tests the web app in web/. Actions are pinned to commit SHAs, since tags can be moved;
+# Dependabot keeps the pins up to date. Pushes to main also publish it to GitHub Pages;
 # pull requests only build and test. Can be started by hand from the Actions tab.
 name: Deploy web app to GitHub Pages
 
@@ -22,29 +23,30 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # npm ci runs third-party install scripts, so this job can only read the repo.
+    # This job can only read the repo, and npm ci skips the packages' install scripts
+    # (none are needed: esbuild's binary comes in a platform package).
     permissions:
       contents: read
     defaults:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: web/.nvmrc
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       # The firmware tests skip themselves here: no firmware image is ever in the repo.
       - run: npm test
       - run: npm run build
       - if: github.event_name != 'pull_request'
-        uses: actions/configure-pages@v6
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: web/dist
 
@@ -60,4 +62,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

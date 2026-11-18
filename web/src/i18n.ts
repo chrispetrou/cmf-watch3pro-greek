@@ -90,7 +90,7 @@ const en = {
     "The file is incomplete": "The file is incomplete",
     "Made for a different watch": "Made for a different watch",
     "The file is damaged": "The file is damaged",
-    "Can't tell the version, use the file as downloaded": "Can’t tell the version, use the file as downloaded",
+    "Not an official release this app knows": "Not an official release this app knows",
   } as Record<string, string>,
   fwSummary: (v: string) => `Firmware ${v}`,
 
@@ -270,7 +270,7 @@ const el: Strings = {
     "The file is incomplete": "Το αρχείο είναι ελλιπές",
     "Made for a different watch": "Είναι για άλλο ρολόι",
     "The file is damaged": "Το αρχείο είναι κατεστραμμένο",
-    "Can't tell the version, use the file as downloaded": "Δεν φαίνεται η έκδοση, χρησιμοποίησε το αρχείο όπως κατέβηκε",
+    "Not an official release this app knows": "Δεν είναι επίσημη έκδοση που γνωρίζει η εφαρμογή",
   },
   fwSummary: (v: string) => `Firmware ${v}`,
 

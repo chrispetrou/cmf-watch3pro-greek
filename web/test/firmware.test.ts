@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { crc32Update } from "../src/ble/protocol";
 import { checkFirmware } from "../src/lib/firmware";
 
 // Uses the official image if it's in firmware/ (git-ignored, never committed).
@@ -23,6 +24,17 @@ describe("checkFirmware", () => {
     d[d.length - 100] ^= 1;
     const r = await checkFirmware(new File([d], NAME), () => {});
     expect(r).toMatchObject({ ok: false, problem: "The file is damaged" });
+  }, 30000);
+
+  it.skipIf(!have)("rejects a modified image even with every checksum fixed up", async () => {
+    // What a tampered "pre-patched" file would look like: changed bytes, CRCs recomputed.
+    const d = new Uint8Array(readFileSync(PATH));
+    d[d.length - 100] ^= 1;
+    const v = new DataView(d.buffer);
+    v.setUint32(0x18, crc32Update(0, d.subarray(0x400)), true);
+    v.setUint32(0x04, crc32Update(0, d.subarray(8, 0x400)), true);
+    const r = await checkFirmware(new File([d], NAME), () => {});
+    expect(r).toMatchObject({ ok: false, problem: "Not an official release this app knows" });
   }, 30000);
 
   it("rejects something else", async () => {
