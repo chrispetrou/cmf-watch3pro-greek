@@ -166,6 +166,7 @@ Alphabets written left to right can be added with a font entry and a few lines i
 ```
 tools/
   patch.py                 fetch latest release, build, flash, verify
+  check_release.py         spot a new official release and add its hash to the web app (daily workflow)
   build_firmware.py        official image -> patched image (reproducible)
   languages.py             the languages and the fonts their glyphs come from
   emoji.py, emoji.txt      the --emoji option: sources and the list of colour emoji

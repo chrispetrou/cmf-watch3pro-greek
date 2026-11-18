@@ -31,7 +31,9 @@ Keep the file as `firmware/ORIGINAL_<version>.bin`. It's also your recovery imag
 
 ### For the web app
 
-The web app only accepts official files it knows by SHA-256. Add the new release to `OFFICIAL` in `web/src/lib/firmware.ts` (version, `shasum -a 256` of the file, and its link on Nothing's CDN) and to `firmware/SHA256SUMS`. Check the hash against a second source if you can, for example the file downloaded again through the Nothing Archive and through Nothing X. Until then the app tells visitors the file is not an official release it knows.
+The web app only accepts official files it knows by SHA-256. A daily workflow (`.github/workflows/firmware-release.yml`, running `tools/check_release.py`) watches the Nothing Archive. When a new release appears it downloads it from Nothing's CDN, builds it with every language and the emoji, pushes a `firmware/<version>` branch that adds its hash, and opens an issue with the result and a link to open the pull request. Try the release on a watch, then open and merge the pull request. You can also start the workflow by hand from the Actions tab.
+
+To do it by hand instead: add the new release to `OFFICIAL` in `web/src/lib/firmware.ts` (version, `shasum -a 256` of the file, and its link on Nothing's CDN) and to `firmware/SHA256SUMS`. Check the hash against a second source if you can, for example the file downloaded again through the Nothing Archive and through Nothing X. Until then the app tells visitors the file is not an official release it knows.
 
 ### 2. Build
 
