@@ -1,4 +1,25 @@
-# CMF Watch 3 Pro language patches
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/readme/logo-dark.svg">
+    <img alt="Watch Languages" src="docs/readme/logo-light.svg" width="56" height="56">
+  </picture>
+</p>
+
+<h1 align="center">Watch Languages</h1>
+
+<p align="center">Greek, Georgian and Armenian letters and about 450 more emoji for the CMF Watch 3 Pro, added to the official firmware's font and installed over Bluetooth, in the browser or from the command line.</p>
+
+<p align="center">
+  <a href="https://github.com/chrispetrou/cmf-watch3pro-languages/actions/workflows/pages.yml"><img alt="build" src="https://img.shields.io/github/actions/workflow/status/chrispetrou/cmf-watch3pro-languages/pages.yml?branch=main&style=flat-square&label=build&labelColor=1a1a1a&color=2f9e44"></a>
+  <img alt="firmware 1.0.1.77" src="https://img.shields.io/badge/firmware-1.0.1.77-8a8a8a?style=flat-square&labelColor=1a1a1a">
+  <a href="#languages"><img alt="3 languages" src="https://img.shields.io/badge/languages-3-8a8a8a?style=flat-square&labelColor=1a1a1a"></a>
+  <a href="#emoji"><img alt="about 450 emoji" src="https://img.shields.io/badge/emoji-%2B450-8a8a8a?style=flat-square&labelColor=1a1a1a"></a>
+  <a href="LICENSE"><img alt="AGPL-3.0 license" src="https://img.shields.io/badge/license-AGPL--3.0-8a8a8a?style=flat-square&labelColor=1a1a1a"></a>
+  <img alt="status unofficial" src="https://img.shields.io/badge/status-unofficial-b08900?style=flat-square&labelColor=1a1a1a">
+  <img alt="no cookies" src="https://img.shields.io/badge/cookies-none-8a8a8a?style=flat-square&labelColor=1a1a1a">
+</p>
+
+<p align="center"><a href="https://watchlanguages.app">web app</a> · <a href="docs/firmware-format.md">how it works</a> · <a href="CONTRIBUTING.md">contributing</a></p>
 
 The CMF Watch 3 Pro can only display the characters in its built-in font. That font covers Latin (including Vietnamese), Cyrillic, Chinese, Japanese and Korean, and also has the letters of Hebrew, Arabic, Thai and Devanagari (whether those display correctly, right to left or with joined letters, hasn't been checked). Notifications in scripts it doesn't have, like Greek, Georgian or Armenian, show up as empty boxes.
 
