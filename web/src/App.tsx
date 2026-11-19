@@ -152,7 +152,13 @@ export default function App() {
   }, []);
   const dark = theme ? theme === "dark" : sysDark;
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
+    // Switch the theme with transitions off, or every border and background with transition-colors
+    // fades through the old theme's colour. Reading a style forces the switch to apply before they come back.
+    const html = document.documentElement;
+    html.classList.add("theme-switching");
+    html.classList.toggle("dark", dark);
+    void getComputedStyle(html).color;
+    requestAnimationFrame(() => html.classList.remove("theme-switching"));
     try {
       if (theme) localStorage.setItem("wl.theme", theme);
       else localStorage.removeItem("wl.theme");

@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties, useState } from "react";
 import { ArrowDownToLine, Bluetooth, BluetoothOff, Check, X } from "lucide-react";
 import type { Phase } from "@/ble/client";
 import type { Language } from "@/lib/languages";
@@ -31,6 +31,57 @@ function caption({ screen, phase }: Props, p: Strings["panel"]): Caption {
   }
 }
 
+type Card = { lang: Language; leaving: boolean; compact?: boolean };
+
+// The cards on screen: the chosen languages, in order, plus any just switched off, kept until their exit
+// animation ends, at the size they had. Only cards that were showing get one; a fourth language or later just goes.
+function merge(shown: Card[], chosen: Language[]): Card[] {
+  const now = new Map(chosen.map((l) => [l.id, l]));
+  const out: Card[] = [];
+  const has = (id: string) => out.some((c) => c.lang.id === id);
+  const wasCompact = shown.filter((c) => !c.leaving).length >= 3;
+  let n = 0;
+  let visible = 0;
+  for (const c of shown) {
+    const keep = now.get(c.lang.id);
+    const wasVisible = c.leaving || visible++ < 3;
+    if (!keep) { if (wasVisible) out.push(c.leaving ? c : { lang: c.lang, leaving: true, compact: wasCompact }); continue; }
+    for (; n < chosen.length && chosen[n].id !== keep.id; n++) if (!has(chosen[n].id)) out.push({ lang: chosen[n], leaving: false });
+    out.push({ lang: keep, leaving: false });
+    n++;
+  }
+  for (; n < chosen.length; n++) if (!has(chosen[n].id)) out.push({ lang: chosen[n], leaving: false });
+  return out;
+}
+
+function Notifications({ chosen }: { chosen: Language[] }) {
+  const ids = chosen.map((l) => l.id).join();
+  const [cards, setCards] = useState<Card[]>(() => chosen.map((lang) => ({ lang, leaving: false })));
+  const [seen, setSeen] = useState(ids);
+  if (ids !== seen) {
+    setSeen(ids);
+    setCards(merge(cards, chosen));
+  }
+  if (cards.length === 0) return <><span className="big">10:42</span><span className="small">Mon 16 Nov</span></>;
+  const compact = chosen.length >= 3;
+  let staying = 0;
+  return (
+    <>
+      {/* Up to two full cards; from three on, compact one-line cards and a count of the rest. */}
+      {!compact && <span className="time">10:42</span>}
+      {cards.map(({ lang: m, leaving, compact: was }) => (leaving || staying++ < 3) && (
+        <span key={m.id} className={cn("notif", (leaving ? was : compact) && "compact", leaving && "leaving")} lang={m.code}
+          onAnimationEnd={(e) => {
+            if (leaving && e.target === e.currentTarget) setCards((cs) => cs.filter((c) => !(c.leaving && c.lang.id === m.id)));
+          }}>
+          <b>{m.sender}</b><span>{m.msg}</span>
+        </span>
+      ))}
+      {chosen.length > 3 && <span className="small more">+{chosen.length - 3} more</span>}
+    </>
+  );
+}
+
 function Face({ screen, phase, chosen, pct, watchFw }: Props) {
   // Looking for the watch or talking to it: the Bluetooth mark sends out rings.
   if (screen === "searching" || (screen === "pairing" && phase !== "pairing")) {
@@ -43,18 +94,7 @@ function Face({ screen, phase, chosen, pct, watchFw }: Props) {
   }
   switch (screen) {
     case "choose":
-      return chosen.length === 0 ? (
-        <><span className="big">10:42</span><span className="small">Mon 16 Nov</span></>
-      ) : (
-        <>
-          {/* Up to two full cards; from three on, compact one-line cards and a count of the rest. */}
-          {chosen.length < 3 && <span className="time">10:42</span>}
-          {chosen.slice(0, 3).map((m) => (
-            <span key={m.id} className={chosen.length < 3 ? "notif" : "notif compact"} lang={m.code}><b>{m.sender}</b><span>{m.msg}</span></span>
-          ))}
-          {chosen.length > 3 && <span className="small more">+{chosen.length - 3} more</span>}
-        </>
-      );
+      return <Notifications chosen={chosen} />;
     case "pairing":
       return (
         <>

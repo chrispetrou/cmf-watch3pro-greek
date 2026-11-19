@@ -43,9 +43,10 @@
     </script>
   </head>
   <body>
-    <!-- Shown until the app starts, and what crawlers that don't run JavaScript read. -->
+    <!-- What crawlers that don't run JavaScript read. Kept invisible for a moment (see .boot in
+         index.css) so a normal load goes straight to the app; slow or script-less loads still see it. -->
     <div id="root">
-      <main>
+      <main class="boot">
         <h1>Read your language on the CMF Watch 3 Pro</h1>
         <p>Adds Greek, Georgian or Armenian letters to the watch's own font, in your browser. Free and open source. Not affiliated with Nothing or CMF.</p>
         <p>Choose your languages, add the official firmware from Nothing, connect the watch over Bluetooth and install. The firmware file never leaves your computer. Works in Chrome or Edge on a computer or Android phone.</p>
