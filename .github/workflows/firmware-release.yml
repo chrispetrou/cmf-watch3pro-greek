@@ -1,0 +1,63 @@
+# Looks for a new official firmware every day (tools/check_release.py). When there is one, it
+# pushes a firmware/<version> branch that adds its SHA-256 to the web app, and opens an issue with
+# the build check and a link to open the pull request. The app accepts the release only once that
+# pull request is merged, after the release has been tried on a real watch.
+#
+# It opens an issue rather than the pull request itself: pull requests opened by Actions don't run
+# the required build check, and "Allow GitHub Actions to create pull requests" stays off.
+name: Check for a new firmware release
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: firmware-release
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    # Push a branch (main is protected by the ruleset) and open an issue. No other access.
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Standard library only, so the runner's Python is enough. The download is data only:
+      # it comes from Nothing's CDN and is parsed, never run.
+      - id: check
+        run: python3 -I tools/check_release.py --body "$RUNNER_TEMP/release.md"
+
+      - if: steps.check.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.check.outputs.version }}
+          OK: ${{ steps.check.outputs.ok }}
+        run: |
+          branch="firmware/$VERSION"
+          if git ls-remote --exit-code --heads "https://github.com/$GITHUB_REPOSITORY" "$branch" >/dev/null; then
+            echo "$branch already exists, so this release was reported before"
+            exit 0
+          fi
+          # Commits carry the maintainer's GitHub no-reply address, so the history keeps one author.
+          git config user.name "Christoforos Petrou"
+          git config user.email "36112975+chrispetrou@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -qam "Web app: accept firmware $VERSION"
+          git push -q "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY" "$branch"
+
+          title="Firmware $VERSION is out"
+          [ "$OK" = "true" ] || title="$title (the patch doesn't fit it yet)"
+          {
+            cat "$RUNNER_TEMP/release.md"
+            echo
+            echo "**[Open the pull request](https://github.com/$GITHUB_REPOSITORY/compare/main...$branch?expand=1)** for the \`$branch\` branch."
+          } > "$RUNNER_TEMP/issue.md"
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$RUNNER_TEMP/issue.md"
