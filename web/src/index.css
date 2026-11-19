@@ -152,3 +152,21 @@ html, body { overflow-x: clip; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
 }
+
+/* The fallback in index.html, until React replaces it. Hidden for the first moment so a normal load
+   (the app script fetched or revalidated) doesn't flash it; shown, lightly styled, if the app is slow
+   to start or doesn't run at all. */
+.boot {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+  color: var(--muted-foreground);
+  animation: boot-in 200ms ease-out 1.5s both;
+}
+.boot h1 { margin-bottom: 1rem; font-size: 1.75rem; font-weight: 600; line-height: 1.25; color: var(--foreground); }
+.boot p + p { margin-top: 0.75rem; }
+.boot a { color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; }
+@keyframes boot-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Set by App for the frame the theme changes in, so colours switch at once instead of fading. */
+.theme-switching, .theme-switching *, .theme-switching *::before, .theme-switching *::after { transition: none !important; }
