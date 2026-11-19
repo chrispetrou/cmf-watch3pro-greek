@@ -109,8 +109,11 @@ default). The technical log stays in English.
   its own tab instead.
 - The deploy workflow gives the build job read access only. Only the deploy job can publish. Its
   actions are pinned to commit SHAs, and `npm ci --ignore-scripts` skips the packages' install scripts.
+- The firmware release workflow can push branches and open issues, nothing else. `main` is protected
+  by the ruleset, so a new release's hash reaches `OFFICIAL` only through a pull request you open and
+  merge. The downloaded file is only parsed, never run.
 - Dependabot opens weekly update PRs for the npm packages (minor and patch versions only) and the
-  workflow's actions, for releases at least a week old. Read the lockfile changes before merging. Every PR that touches `web/` or `tools/` is built and tested before merging.
+  workflows' actions, for releases at least a week old. Read the lockfile changes before merging. Every PR that touches `web/` or `tools/` is built and tested before merging.
 - The firmware build tests are skipped in CI because no firmware is in the repo. Before merging a
   Pyodide update, run `npm test` locally with the official image in `firmware/`: the patched image
   must keep the same sha256.
