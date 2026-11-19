@@ -7,9 +7,9 @@ Look for a new official CMF Watch 3 Pro firmware and prepare it for the web app.
 Run daily by .github/workflows/firmware-release.yml. When the archive lists a version that isn't
 in OFFICIAL (web/src/lib/firmware.ts) it downloads the file from Nothing's CDN, checks that it's a
 complete image for this watch, builds it with every language and the emoji (the same code as the
-web app), and adds its SHA-256 to OFFICIAL and firmware/SHA256SUMS. The workflow then opens a pull
-request. Nothing is accepted by the app until that pull request is merged, after the release has
-been tried on a real watch.
+web app), and adds its SHA-256 to OFFICIAL and firmware/SHA256SUMS. The workflow then pushes a branch
+and opens an issue with a link to open the pull request. Nothing is accepted by the app until that
+pull request is merged, after the release has been tried on a real watch.
 
 Standard library only, so it runs on a bare GitHub runner.
 """
@@ -103,7 +103,7 @@ def output(**kv):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--file", help="check this local image instead of downloading the latest")
-    ap.add_argument("--body", default="release-pr.md", help="where to write the pull request text")
+    ap.add_argument("--body", default="release-issue.md", help="where to write the issue text")
     a = ap.parse_args()
 
     if a.file:
